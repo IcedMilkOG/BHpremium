@@ -7,67 +7,108 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
+-- Utility function for safe instance creation
+local function createInstance(class, properties)
+    local instance = Instance.new(class)
+    for prop, value in pairs(properties or {}) do
+        pcall(function()
+            instance[prop] = value
+        end)
+    end
+    return instance
+end
+
 -- Create main UI
 function MobileUILibrary.new(title)
     local self = setmetatable({}, MobileUILibrary)
     
     -- Main ScreenGui
-    self.ScreenGui = Instance.new("ScreenGui")
-    self.ScreenGui.Name = title or "MobileUI"
-    self.ScreenGui.ResetOnSpawn = false
-    self.ScreenGui.IgnoreGuiInset = true
-    self.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    self.ScreenGui = createInstance("ScreenGui", {
+        Name = title or "MobileUI",
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+        Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui", 10)
+    })
+    if not self.ScreenGui.Parent then
+        warn("Failed to parent ScreenGui to PlayerGui")
+        return nil
+    end
     
-    -- Main Frame
-    self.MainFrame = Instance.new("Frame")
-    self.MainFrame.Size = UDim2.new(0.9, 0, 0.7, 0)
-    self.MainFrame.Position = UDim2.new(0.05, 0, 0.15, 0)
-    self.MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    self.MainFrame.BorderSizePixel = 0
-    self.MainFrame.ClipsDescendants = true
-    self.MainFrame.Parent = self.ScreenGui
+    -- Main Frame with glassmorphism effect
+    self.MainFrame = createInstance("Frame", {
+        Size = UDim2.new(0.85, 0, 0.65, 0),
+        Position = UDim2.new(0.075, 0, 0.175, 0),
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+        BackgroundTransparency = 0.3,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        Parent = self.ScreenGui
+    })
     
-    -- UI Corner for smooth edges
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
-    corner.Parent = self.MainFrame
+    -- UICorner and UIGradient for modern look
+    createInstance("UICorner", { CornerRadius = UDim.new(0, 15), Parent = self.MainFrame })
+    createInstance("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+        }),
+        Rotation = 45,
+        Parent = self.MainFrame
+    })
+    
+    -- Shadow effect
+    local shadow = createInstance("ImageLabel", {
+        Image = "rbxassetid://1316045217", -- Roblox shadow asset
+        ImageColor3 = Color3.fromRGB(0, 0, 0),
+        ImageTransparency = 0.7,
+        Size = UDim2.new(1, 20, 1, 20),
+        Position = UDim2.new(0, -10, 0, -10),
+        BackgroundTransparency = 1,
+        ZIndex = -1,
+        Parent = self.MainFrame
+    })
     
     -- Title Label
-    self.TitleLabel = Instance.new("TextLabel")
-    self.TitleLabel.Size = UDim2.new(1, 0, 0.1, 0)
-    self.TitleLabel.Position = UDim2.new(0, 0, 0, 0)
-    self.TitleLabel.BackgroundTransparency = 1
-    self.TitleLabel.Text = title or "Mobile UI"
-    self.TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    self.TitleLabel.TextScaled = true
-    self.TitleLabel.Font = Enum.Font.GothamBold
-    self.TitleLabel.Parent = self.MainFrame
+    self.TitleLabel = createInstance("TextLabel", {
+        Size = UDim2.new(1, 0, 0.1, 0),
+        BackgroundTransparency = 1,
+        Text = title or "Mobile UI",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextScaled = true,
+        Font = Enum.Font.GothamBlack,
+        TextStrokeTransparency = 0.8,
+        Parent = self.MainFrame
+    })
     
     -- Tab Container
-    self.TabContainer = Instance.new("Frame")
-    self.TabContainer.Size = UDim2.new(1, 0, 0.1, 0)
-    self.TabContainer.Position = UDim2.new(0, 0, 0.1, 0)
-    self.TabContainer.BackgroundTransparency = 1
-    self.TabContainer.Parent = self.MainFrame
+    self.TabContainer = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 0.1, 0),
+        Position = UDim2.new(0, 0, 0.1, 0),
+        BackgroundTransparency = 1,
+        Parent = self.MainFrame
+    })
     
-    self.TabLayout = Instance.new("UIListLayout")
-    self.TabLayout.FillDirection = Enum.FillDirection.Horizontal
-    self.TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    self.TabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    self.TabLayout.Padding = UDim.new(0, 10)
-    self.TabLayout.Parent = self.TabContainer
+    self.TabLayout = createInstance("UIListLayout", {
+        FillDirection = Enum.FillDirection.Horizontal,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        Padding = UDim.new(0, 15),
+        Parent = self.TabContainer
+    })
     
     -- Content Frame
-    self.ContentFrame = Instance.new("Frame")
-    self.ContentFrame.Size = UDim2.new(1, 0, 0.8, 0)
-    self.ContentFrame.Position = UDim2.new(0, 0, 0.2, 0)
-    self.ContentFrame.BackgroundTransparency = 1
-    self.ContentFrame.ClipsDescendants = true
-    self.ContentFrame.Parent = self.MainFrame
+    self.ContentFrame = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 0.8, 0),
+        Position = UDim2.new(0, 0, 0.2, 0),
+        BackgroundTransparency = 1,
+        ClipsDescendants = true,
+        Parent = self.MainFrame
+    })
     
-    self.ContentLayout = Instance.new("UIListLayout")
-    self.ContentLayout.Padding = UDim.new(0, 10)
-    self.ContentLayout.Parent = self.ContentFrame
+    self.ContentLayout = createInstance("UIListLayout", {
+        Padding = UDim.new(0, 15),
+        Parent = self.ContentFrame
+    })
     
     self.Tabs = {}
     self.CurrentTab = nil
@@ -97,9 +138,9 @@ function MobileUILibrary:EnableDragging()
                 local delta = input.Position - dragStart
                 local newPos = UDim2.new(
                     startPos.X.Scale,
-                    startPos.X.Offset + delta.X,
+                    math.clamp(startPos.X.Offset + delta.X, -self.MainFrame.AbsoluteSize.X / 2, game:GetService("GuiService"):GetScreenResolution().X - self.MainFrame.AbsoluteSize.X / 2),
                     startPos.Y.Scale,
-                    startPos.Y.Offset + delta.Y
+                    math.clamp(startPos.Y.Offset + delta.Y, -self.MainFrame.AbsoluteSize.Y / 2, game:GetService("GuiService"):GetScreenResolution().Y - self.MainFrame.AbsoluteSize.Y / 2)
                 )
                 self.MainFrame.Position = newPos
             end
@@ -115,38 +156,58 @@ end
 
 -- Create a new tab
 function MobileUILibrary:CreateTab(name)
+    if not name then
+        warn("Tab name cannot be nil")
+        return nil
+    end
+    
     local tab = {}
     
-    -- Tab Button
-    tab.Button = Instance.new("TextButton")
-    tab.Button.Size = UDim2.new(0, 100, 0, 30)
-    tab.Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    tab.Button.Text = name
-    tab.Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tab.Button.TextScaled = true
-    tab.Button.Font = Enum.Font.Gotham
-    tab.Button.Parent = self.TabContainer
+    -- Tab Button with animation
+    tab.Button = createInstance("TextButton", {
+        Size = UDim2.new(0, 120, 0, 35),
+        BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+        Text = name,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextScaled = true,
+        Font = Enum.Font.GothamBold,
+        Parent = self.TabContainer
+    })
     
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 5)
-    corner.Parent = tab.Button
+    createInstance("UICorner", { CornerRadius = UDim.new(0, 8), Parent = tab.Button })
+    createInstance("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 80, 80)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 40))
+        }),
+        Parent = tab.Button
+    })
     
     -- Tab Content
-    tab.Content = Instance.new("Frame")
-    tab.Content.Size = UDim2.new(1, 0, 1, 0)
-    tab.Content.BackgroundTransparency = 1
-    tab.Content.Visible = false
-    tab.Content.Parent = self.ContentFrame
+    tab.Content = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Visible = false,
+        Parent = self.ContentFrame
+    })
     
-    tab.ContentLayout = Instance.new("UIListLayout")
-    tab.ContentLayout.Padding = UDim.new(0, 10)
-    tab.ContentLayout.Parent = tab.Content
+    tab.ContentLayout = createInstance("UIListLayout", {
+        Padding = UDim.new(0, 15),
+        Parent = tab.Content
+    })
     
     self.Tabs[name] = tab
     
-    -- Tab switching
+    -- Tab switching with animation
     tab.Button.MouseButton1Click:Connect(function()
-        self:SwitchTab(name)
+        if self.CurrentTab ~= name then
+            self:SwitchTab(name)
+            local tween = TweenService:Create(tab.Button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { Size = UDim2.new(0, 140, 0, 40) })
+            tween:Play()
+            wait(0.3)
+            tween = TweenService:Create(tab.Button, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Size = UDim2.new(0, 120, 0, 35) })
+            tween:Play()
+        end
     end)
     
     if not self.CurrentTab then
@@ -161,70 +222,106 @@ function MobileUILibrary:SwitchTab(name)
     if self.Tabs[name] then
         for tabName, tab in pairs(self.Tabs) do
             tab.Content.Visible = (tabName == name)
-            tab.Button.BackgroundColor3 = tabName == name and Color3.fromRGB(70, 70, 70) or Color3.fromRGB(50, 50, 50)
+            local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad)
+            TweenService:Create(tab.Button, tweenInfo, {
+                BackgroundColor3 = tabName == name and Color3.fromRGB(100, 100, 255) or Color3.fromRGB(60, 60, 60)
+            }):Play()
         end
         self.CurrentTab = name
+    else
+        warn("Tab not found: " .. tostring(name))
     end
 end
 
 -- Create a label
 function MobileUILibrary:CreateLabel(tab, text)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 30)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextScaled = true
-    label.Font = Enum.Font.Gotham
-    label.Parent = self.Tabs[tab].Content
+    if not self.Tabs[tab] then
+        warn("Invalid tab for label: " .. tostring(tab))
+        return nil
+    end
+    
+    local label = createInstance("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 35),
+        BackgroundTransparency = 1,
+        Text = text or "Label",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextScaled = true,
+        Font = Enum.Font.Gotham,
+        TextStrokeTransparency = 0.8,
+        Parent = self.Tabs[tab].Content
+    })
     
     return label
 end
 
 -- Create a slider
 function MobileUILibrary:CreateSlider(tab, name, min, max, default, callback)
-    local sliderFrame = Instance.new("Frame")
-    sliderFrame.Size = UDim2.new(1, 0, 0, 50)
-    sliderFrame.BackgroundTransparency = 1
-    sliderFrame.Parent = self.Tabs[tab].Content
+    if not self.Tabs[tab] then
+        warn("Invalid tab for slider: " .. tostring(tab))
+        return nil
+    end
     
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextScaled = true
-    label.Font = Enum.Font.Gotham
-    label.Parent = sliderFrame
+    local sliderFrame = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 60),
+        BackgroundTransparency = 1,
+        Parent = self.Tabs[tab].Content
+    })
     
-    local sliderBar = Instance.new("Frame")
-    sliderBar.Size = UDim2.new(1, -20, 0, 10)
-    sliderBar.Position = UDim2.new(0, 10, 0, 30)
-    sliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    sliderBar.Parent = sliderFrame
+    local label = createInstance("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        Text = name,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextScaled = true,
+        Font = Enum.Font.Gotham,
+        Parent = sliderFrame
+    })
     
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 5)
-    corner.Parent = sliderBar
+    local sliderBar = createInstance("Frame", {
+        Size = UDim2.new(1, -30, 0, 12),
+        Position = UDim2.new(0, 15, 0, 35),
+        BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+        Parent = sliderFrame
+    })
     
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
-    fill.Parent = sliderBar
+    createInstance("UICorner", { CornerRadius = UDim.new(0, 6), Parent = sliderBar })
     
-    local cornerFill = Instance.new("UICorner")
-    cornerFill.CornerRadius = UDim.new(0, 5)
-    cornerFill.Parent = fill
+    local fill = createInstance("Frame", {
+        Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(100, 100, 255),
+        Parent = sliderBar
+    })
+    
+    createInstance("UICorner", { CornerRadius = UDim.new(0, 6), Parent = fill })
+    createInstance("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 150, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 100, 255))
+        }),
+        Parent = fill
+    })
+    
+    local valueLabel = createInstance("TextLabel", {
+        Size = UDim2.new(0, 50, 0, 20),
+        Position = UDim2.new(1, -65, 0, 35),
+        BackgroundTransparency = 1,
+        Text = tostring(default),
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextScaled = true,
+        Font = Enum.Font.Gotham,
+        Parent = sliderFrame
+    })
     
     local value = default
     local dragging = false
     
     local function updateSlider(input)
         local relativeX = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
-        value = min + (max - min) * relativeX
+        value = math.floor(min + (max - min) * relativeX)
         fill.Size = UDim2.new(relativeX, 0, 1, 0)
+        valueLabel.Text = tostring(value)
         if callback then
-            callback(value)
+            pcall(callback, value)
         end
     end
     
@@ -232,6 +329,7 @@ function MobileUILibrary:CreateSlider(tab, name, min, max, default, callback)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             updateSlider(input)
+            TweenService:Create(sliderBar, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(70, 70, 70) }):Play()
         end
     end)
     
@@ -244,6 +342,7 @@ function MobileUILibrary:CreateSlider(tab, name, min, max, default, callback)
     sliderBar.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
+            TweenService:Create(sliderBar, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(50, 50, 50) }):Play()
         end
     end)
     
@@ -252,67 +351,86 @@ end
 
 -- Create a dropdown
 function MobileUILibrary:CreateDropdown(tab, name, options, callback)
-    local dropdownFrame = Instance.new("Frame")
-    dropdownFrame.Size = UDim2.new(1, 0, 0, 50)
-    dropdownFrame.BackgroundTransparency = 1
-    dropdownFrame.Parent = self.Tabs[tab].Content
+    if not self.Tabs[tab] then
+        warn("Invalid tab for dropdown: " .. tostring(tab))
+        return nil
+    end
     
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextScaled = true
-    label.Font = Enum.Font.Gotham
-    label.Parent = dropdownFrame
+    local dropdownFrame = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 60),
+        BackgroundTransparency = 1,
+        Parent = self.Tabs[tab].Content
+    })
     
-    local dropdownButton = Instance.new("TextButton")
-    dropdownButton.Size = UDim2.new(1, -20, 0, 30)
-    dropdownButton.Position = UDim2.new(0, 10, 0, 20)
-    dropdownButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    dropdownButton.Text = options[1] or "Select"
-    dropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    dropdownButton.TextScaled = true
-    dropdownButton.Font = Enum.Font.Gotham
-    dropdownButton.Parent = dropdownFrame
+    local label = createInstance("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        Text = name,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextScaled = true,
+        Font = Enum.Font.Gotham,
+        Parent = dropdownFrame
+    })
     
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 5)
-    corner.Parent = dropdownButton
+    local dropdownButton = createInstance("TextButton", {
+        Size = UDim2.new(1, -30, 0, 35),
+        Position = UDim2.new(0, 15, 0, 25),
+        BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+        Text = options[1] or "Select",
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextScaled = true,
+        Font = Enum.Font.GothamBold,
+        Parent = dropdownFrame
+    })
     
-    local dropdownList = Instance.new("Frame")
-    dropdownList.Size = UDim2.new(1, -20, 0, 0)
-    dropdownList.Position = UDim2.new(0, 10, 0, 50)
-    dropdownList.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    dropdownList.Visible = false
-    dropdownList.ClipsDescendants = true
-    dropdownList.Parent = dropdownFrame
+    createInstance("UICorner", { CornerRadius = UDim.new(0, 8), Parent = dropdownButton })
+    createInstance("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 80, 80)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 40))
+        }),
+        Parent = dropdownButton
+    })
     
-    local listLayout = Instance.new("UIListLayout")
-    listLayout.Parent = dropdownList
+    local dropdownList = createInstance("Frame", {
+        Size = UDim2.new(1, -30, 0, 0),
+        Position = UDim2.new(0, 15, 0, 60),
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        BackgroundTransparency = 0.2,
+        Visible = false,
+        ClipsDescendants = true,
+        Parent = dropdownFrame
+    })
+    
+    createInstance("UICorner", { CornerRadius = UDim.new(0, 8), Parent = dropdownList })
+    local listLayout = createInstance("UIListLayout", { Parent = dropdownList })
     
     local function toggleList()
         dropdownList.Visible = not dropdownList.Visible
-        dropdownList.Size = dropdownList.Visible and UDim2.new(1, -20, 0, #options * 30) or UDim2.new(1, -20, 0, 0)
+        local targetSize = dropdownList.Visible and UDim2.new(1, -30, 0, math.min(#options * 35, 140)) or UDim2.new(1, -30, 0, 0)
+        TweenService:Create(dropdownList, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { Size = targetSize }):Play()
     end
     
     dropdownButton.MouseButton1Click:Connect(toggleList)
     
-    for _, option in ipairs(options) do
-        local optionButton = Instance.new("TextButton")
-        optionButton.Size = UDim2.new(1, 0, 0, 30)
-        optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        optionButton.Text = option
-        optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        optionButton.TextScaled = true
-        optionButton.Font = Enum.Font.Gotham
-        optionButton.Parent = dropdownList
+    for _, option in ipairs(options or {}) do
+        local optionButton = createInstance("TextButton", {
+            Size = UDim2.new(1, 0, 0, 35),
+            BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+            Text = option,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextScaled = true,
+            Font = Enum.Font.Gotham,
+            Parent = dropdownList
+        })
+        
+        createInstance("UICorner", { CornerRadius = UDim.new(0, 8), Parent = optionButton })
         
         optionButton.MouseButton1Click:Connect(function()
             dropdownButton.Text = option
             toggleList()
             if callback then
-                callback(option)
+                pcall(callback, option)
             end
         end)
     end
@@ -322,70 +440,79 @@ end
 
 -- Create a color picker
 function MobileUILibrary:CreateColorPicker(tab, name, defaultColor, callback)
-    local colorPickerFrame = Instance.new("Frame")
-    colorPickerFrame.Size = UDim2.new(1, 0, 0, 50)
-    colorPickerFrame.BackgroundTransparency = 1
-    colorPickerFrame.Parent = self.Tabs[tab].Content
+    if not self.Tabs[tab] then
+        warn("Invalid tab for color picker: " .. tostring(tab))
+        return nil
+    end
     
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.BackgroundTransparency = 1
-    label.Text = name
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextScaled = true
-    label.Font = Enum.Font.Gotham
-    label.Parent = colorPickerFrame
+    local colorPickerFrame = createInstance("Frame", {
+        Size = UDim2.new(1, 0, 0, 60),
+        BackgroundTransparency = 1,
+        Parent = self.Tabs[tab].Content
+    })
     
-    local colorButton = Instance.new("TextButton")
-    colorButton.Size = UDim2.new(0, 40, 0, 30)
-    colorButton.Position = UDim2.new(0, 10, 0, 20)
-    colorButton.BackgroundColor3 = defaultColor or Color3.fromRGB(255, 255, 255)
-    colorButton.Text = ""
-    colorButton.Parent = colorPickerFrame
+    local label = createInstance("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        Text = name,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        TextScaled = true,
+        Font = Enum.Font.Gotham,
+        Parent = colorPickerFrame
+    })
     
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 5)
-    corner.Parent = colorButton
+    local colorButton = createInstance("TextButton", {
+        Size = UDim2.new(0, 50, 0, 35),
+        Position = UDim2.new(0, 15, 0, 25),
+        BackgroundColor3 = defaultColor or Color3.fromRGB(255, 255, 255),
+        Text = "",
+        Parent = colorPickerFrame
+    })
     
-    local pickerFrame = Instance.new("Frame")
-    pickerFrame.Size = UDim2.new(0, 150, 0, 150)
-    pickerFrame.Position = UDim2.new(0, 60, 0, 20)
-    pickerFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    pickerFrame.Visible = false
-    pickerFrame.Parent = colorPickerFrame
+    createInstance("UICorner", { CornerRadius = UDim.new(0, 8), Parent = colorButton })
     
-    local cornerPicker = Instance.new("UICorner")
-    cornerPicker.CornerRadius = UDim.new(0, 5)
-    cornerPicker.Parent = pickerFrame
+    local pickerFrame = createInstance("Frame", {
+        Size = UDim2.new(0, 180, 0, 180),
+        Position = UDim2.new(0, 75, 0, 25),
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        BackgroundTransparency = 0.2,
+        Visible = false,
+        Parent = colorPickerFrame
+    })
     
-    local hueBar = Instance.new("ImageLabel")
-    hueBar.Size = UDim2.new(0, 20, 1, 0)
-    hueBar.Position = UDim2.new(0, 5, 0, 5)
-    hueBar.Image = "rbxassetid://698052001" -- Roblox hue gradient
-    hueBar.Parent = pickerFrame
+    createInstance("UICorner", { CornerRadius = UDim.new(0, 8), Parent = pickerFrame })
     
-    local saturationValue = Instance.new("ImageLabel")
-    saturationValue.Size = UDim2.new(0, 100, 0, 100)
-    saturationValue.Position = UDim2.new(0, 30, 0, 5)
-    saturationValue.Image = "rbxassetid://698052001" -- Placeholder for saturation/value
-    saturationValue.Parent = pickerFrame
+    local hueBar = createInstance("ImageLabel", {
+        Size = UDim2.new(0, 30, 0, 150),
+        Position = UDim2.new(0, 10, 0, 15),
+        Image = "rbxassetid://698052001", -- Roblox hue gradient
+        Parent = pickerFrame
+    })
     
-    local function updateColor()
-        -- Simplified color picking (hue only for mobile simplicity)
-        local color = Color3.fromHSV(math.random(), 1, 1) -- Placeholder
+    local saturationValue = createInstance("ImageLabel", {
+        Size = UDim2.new(0, 120, 0, 120),
+        Position = UDim2.new(0, 45, 0, 15),
+        Image = "rbxassetid://698052001", -- Placeholder for saturation/value
+        Parent = pickerFrame
+    })
+    
+    local function updateColor(input)
+        local hue = math.clamp((input.Position.Y - hueBar.AbsolutePosition.Y) / hueBar.AbsoluteSize.Y, 0, 1)
+        local color = Color3.fromHSV(hue, 1, 1)
         colorButton.BackgroundColor3 = color
         if callback then
-            callback(color)
+            pcall(callback, color)
         end
     end
     
     colorButton.MouseButton1Click:Connect(function()
         pickerFrame.Visible = not pickerFrame.Visible
+        TweenService:Create(pickerFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { BackgroundTransparency = pickerFrame.Visible and 0.2 or 1 }):Play()
     end)
     
     hueBar.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            updateColor()
+            updateColor(input)
         end
     end)
     
@@ -395,7 +522,9 @@ end
 -- Destroy the UI
 function MobileUILibrary:Destroy()
     if self.ScreenGui then
-        self.ScreenGui:Destroy()
+        pcall(function()
+            self.ScreenGui:Destroy()
+        end)
     end
 end
 
