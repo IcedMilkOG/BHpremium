@@ -1,8 +1,531 @@
--- KelTec GUI Library - UI Elements (Part 2)
--- Add this to the main library file
+--[[
+    KelTec GUI Library - Complete Version
+    Version: 1.0.0
+    Author: KelTec Team
+    
+    A modern, feature-rich GUI library for Roblox
+]]
+
+local KelTecLib = {}
+
+-- Services
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+
+-- Variables
+local Player = Players.LocalPlayer
+local Mouse = Player:GetMouse()
+
+-- Library Configuration
+local Config = {
+    WindowSize = {X = 600, Y = 500},
+    Colors = {
+        Primary = Color3.fromRGB(30, 30, 30),
+        Secondary = Color3.fromRGB(40, 40, 40),
+        Accent = Color3.fromRGB(0, 122, 255),
+        Background = Color3.fromRGB(20, 20, 20),
+        Text = Color3.fromRGB(255, 255, 255),
+        TextSecondary = Color3.fromRGB(180, 180, 180),
+        Border = Color3.fromRGB(60, 60, 60),
+        Success = Color3.fromRGB(52, 199, 89),
+        Warning = Color3.fromRGB(255, 149, 0),
+        Error = Color3.fromRGB(255, 69, 58)
+    },
+    Fonts = {
+        Main = Enum.Font.Gotham,
+        Bold = Enum.Font.GothamBold
+    },
+    Animations = {
+        Speed = 0.3,
+        Style = Enum.EasingStyle.Quad,
+        Direction = Enum.EasingDirection.Out
+    }
+}
+
+-- Utility Functions
+local function CreateTween(object, properties, duration, style, direction)
+    duration = duration or Config.Animations.Speed
+    style = style or Config.Animations.Style
+    direction = direction or Config.Animations.Direction
+    
+    local tween = TweenService:Create(object, TweenInfo.new(duration, style, direction), properties)
+    tween:Play()
+    return tween
+end
+
+local function CreateCorner(parent, radius)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius or 6)
+    corner.Parent = parent
+    return corner
+end
+
+local function CreateStroke(parent, color, thickness)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = color or Config.Colors.Border
+    stroke.Thickness = thickness or 1
+    stroke.Parent = parent
+    return stroke
+end
+
+local function CreateGradient(parent, colors, rotation)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = colors or ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Config.Colors.Primary),
+        ColorSequenceKeypoint.new(1, Config.Colors.Secondary)
+    }
+    gradient.Rotation = rotation or 0
+    gradient.Parent = parent
+    return gradient
+end
+
+-- Loading Screen
+function KelTecLib.ShowLoader(title, duration)
+    duration = duration or 3
+    
+    local LoaderGui = Instance.new("ScreenGui")
+    LoaderGui.Name = "KelTecLoader"
+    LoaderGui.Parent = CoreGui
+    LoaderGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    local Background = Instance.new("Frame")
+    Background.Name = "Background"
+    Background.Size = UDim2.new(1, 0, 1, 0)
+    Background.BackgroundColor3 = Config.Colors.Background
+    Background.BorderSizePixel = 0
+    Background.Parent = LoaderGui
+    
+    local LoadingFrame = Instance.new("Frame")
+    LoadingFrame.Name = "LoadingFrame"
+    LoadingFrame.Size = UDim2.new(0, 400, 0, 200)
+    LoadingFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
+    LoadingFrame.BackgroundColor3 = Config.Colors.Primary
+    LoadingFrame.BorderSizePixel = 0
+    LoadingFrame.Parent = Background
+    CreateCorner(LoadingFrame, 12)
+    CreateStroke(LoadingFrame, Config.Colors.Border, 2)
+    
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Size = UDim2.new(1, -40, 0, 50)
+    Title.Position = UDim2.new(0, 20, 0, 30)
+    Title.BackgroundTransparency = 1
+    Title.Text = title or "KelTec GUI Library"
+    Title.TextColor3 = Config.Colors.Text
+    Title.TextSize = 24
+    Title.Font = Config.Fonts.Bold
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = LoadingFrame
+    
+    local ProgressBar = Instance.new("Frame")
+    ProgressBar.Name = "ProgressBar"
+    ProgressBar.Size = UDim2.new(1, -40, 0, 6)
+    ProgressBar.Position = UDim2.new(0, 20, 0, 120)
+    ProgressBar.BackgroundColor3 = Config.Colors.Secondary
+    ProgressBar.BorderSizePixel = 0
+    ProgressBar.Parent = LoadingFrame
+    CreateCorner(ProgressBar, 3)
+    
+    local ProgressFill = Instance.new("Frame")
+    ProgressFill.Name = "ProgressFill"
+    ProgressFill.Size = UDim2.new(0, 0, 1, 0)
+    ProgressFill.BackgroundColor3 = Config.Colors.Accent
+    ProgressFill.BorderSizePixel = 0
+    ProgressFill.Parent = ProgressBar
+    CreateCorner(ProgressFill, 3)
+    CreateGradient(ProgressFill, ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Config.Colors.Accent),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 200, 255))
+    }, 45)
+    
+    local StatusText = Instance.new("TextLabel")
+    StatusText.Name = "StatusText"
+    StatusText.Size = UDim2.new(1, -40, 0, 30)
+    StatusText.Position = UDim2.new(0, 20, 0, 140)
+    StatusText.BackgroundTransparency = 1
+    StatusText.Text = "Loading components..."
+    StatusText.TextColor3 = Config.Colors.TextSecondary
+    StatusText.TextSize = 14
+    StatusText.Font = Config.Fonts.Main
+    StatusText.TextXAlignment = Enum.TextXAlignment.Left
+    StatusText.Parent = LoadingFrame
+    
+    -- Animate loading
+    local loadingSteps = {
+        "Initializing library...",
+        "Loading components...",
+        "Setting up interface...",
+        "Finalizing setup...",
+        "Ready!"
+    }
+    
+    spawn(function()
+        for i, step in ipairs(loadingSteps) do
+            StatusText.Text = step
+            CreateTween(ProgressFill, {Size = UDim2.new(i/#loadingSteps, 0, 1, 0)}, 0.5)
+            wait(duration / #loadingSteps)
+        end
+        
+        wait(0.5)
+        CreateTween(LoaderGui, {BackgroundTransparency = 1}, 0.5)
+        CreateTween(LoadingFrame, {
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0.5, -200, 0.5, -150)
+        }, 0.5)
+        
+        for _, child in pairs(LoadingFrame:GetChildren()) do
+            if child:IsA("GuiObject") then
+                CreateTween(child, {BackgroundTransparency = 1}, 0.5)
+                if child:IsA("TextLabel") then
+                    CreateTween(child, {TextTransparency = 1}, 0.5)
+                end
+            end
+        end
+        
+        wait(0.6)
+        LoaderGui:Destroy()
+    end)
+end
+
+-- Main GUI Class
+local GUI = {}
+GUI.__index = GUI
+
+-- Constructor
+function KelTecLib.new(config)
+    local self = setmetatable({}, GUI)
+    
+    -- Configuration
+    config = config or {}
+    self.WindowSize = config.WindowSize or Config.WindowSize
+    self.Title = config.Title or "KelTec GUI"
+    self.ToggleKey = config.ToggleKey or Enum.KeyCode.RightShift
+    self.Tabs = {}
+    self.Elements = {}
+    self.Visible = true
+    
+    -- Create Main GUI
+    self:CreateMainGui()
+    self:SetupToggle()
+    
+    return self
+end
+
+function GUI:CreateMainGui()
+    -- Main ScreenGui
+    self.Gui = Instance.new("ScreenGui")
+    self.Gui.Name = "KelTecGui"
+    self.Gui.Parent = CoreGui
+    self.Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    self.Gui.ResetOnSpawn = false
+    
+    -- Main Window
+    self.MainFrame = Instance.new("Frame")
+    self.MainFrame.Name = "MainFrame"
+    self.MainFrame.Size = UDim2.new(0, self.WindowSize.X, 0, self.WindowSize.Y)
+    self.MainFrame.Position = UDim2.new(0.5, -self.WindowSize.X/2, 0.5, -self.WindowSize.Y/2)
+    self.MainFrame.BackgroundColor3 = Config.Colors.Primary
+    self.MainFrame.BorderSizePixel = 0
+    self.MainFrame.Active = true
+    self.MainFrame.Draggable = true
+    self.MainFrame.Parent = self.Gui
+    CreateCorner(self.MainFrame, 12)
+    CreateStroke(self.MainFrame, Config.Colors.Border, 2)
+    
+    -- Title Bar
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Name = "TitleBar"
+    TitleBar.Size = UDim2.new(1, 0, 0, 50)
+    TitleBar.BackgroundColor3 = Config.Colors.Secondary
+    TitleBar.BorderSizePixel = 0
+    TitleBar.Parent = self.MainFrame
+    CreateCorner(TitleBar, 12)
+    CreateStroke(TitleBar, Config.Colors.Border)
+    
+    -- Fix corner for title bar
+    local TitleBarCornerFix = Instance.new("Frame")
+    TitleBarCornerFix.Size = UDim2.new(1, 0, 0, 12)
+    TitleBarCornerFix.Position = UDim2.new(0, 0, 1, -12)
+    TitleBarCornerFix.BackgroundColor3 = Config.Colors.Secondary
+    TitleBarCornerFix.BorderSizePixel = 0
+    TitleBarCornerFix.Parent = TitleBar
+    
+    -- Title Text
+    local TitleText = Instance.new("TextLabel")
+    TitleText.Name = "TitleText"
+    TitleText.Size = UDim2.new(1, -100, 1, 0)
+    TitleText.Position = UDim2.new(0, 20, 0, 0)
+    TitleText.BackgroundTransparency = 1
+    TitleText.Text = self.Title
+    TitleText.TextColor3 = Config.Colors.Text
+    TitleText.TextSize = 18
+    TitleText.Font = Config.Fonts.Bold
+    TitleText.TextXAlignment = Enum.TextXAlignment.Left
+    TitleText.Parent = TitleBar
+    
+    -- Close Button
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Name = "CloseButton"
+    CloseButton.Size = UDim2.new(0, 30, 0, 30)
+    CloseButton.Position = UDim2.new(1, -40, 0.5, -15)
+    CloseButton.BackgroundColor3 = Config.Colors.Error
+    CloseButton.BorderSizePixel = 0
+    CloseButton.Text = "×"
+    CloseButton.TextColor3 = Config.Colors.Text
+    CloseButton.TextSize = 18
+    CloseButton.Font = Config.Fonts.Bold
+    CloseButton.Parent = TitleBar
+    CreateCorner(CloseButton, 6)
+    
+    CloseButton.MouseButton1Click:Connect(function()
+        self:Toggle()
+    end)
+    
+    -- Tab Container
+    self.TabContainer = Instance.new("Frame")
+    self.TabContainer.Name = "TabContainer"
+    self.TabContainer.Size = UDim2.new(0, 150, 1, -60)
+    self.TabContainer.Position = UDim2.new(0, 10, 0, 60)
+    self.TabContainer.BackgroundColor3 = Config.Colors.Secondary
+    self.TabContainer.BorderSizePixel = 0
+    self.TabContainer.Parent = self.MainFrame
+    CreateCorner(self.TabContainer, 8)
+    CreateStroke(self.TabContainer, Config.Colors.Border)
+    
+    -- Tab List
+    self.TabList = Instance.new("ScrollingFrame")
+    self.TabList.Name = "TabList"
+    self.TabList.Size = UDim2.new(1, -10, 1, -10)
+    self.TabList.Position = UDim2.new(0, 5, 0, 5)
+    self.TabList.BackgroundTransparency = 1
+    self.TabList.BorderSizePixel = 0
+    self.TabList.ScrollBarThickness = 4
+    self.TabList.ScrollBarImageColor3 = Config.Colors.Accent
+    self.TabList.CanvasSize = UDim2.new(0, 0, 0, 0)
+    self.TabList.Parent = self.TabContainer
+    
+    local TabListLayout = Instance.new("UIListLayout")
+    TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabListLayout.Padding = UDim.new(0, 5)
+    TabListLayout.Parent = self.TabList
+    
+    -- Content Container
+    self.ContentContainer = Instance.new("Frame")
+    self.ContentContainer.Name = "ContentContainer"
+    self.ContentContainer.Size = UDim2.new(1, -180, 1, -60)
+    self.ContentContainer.Position = UDim2.new(0, 170, 0, 60)
+    self.ContentContainer.BackgroundTransparency = 1
+    self.ContentContainer.Parent = self.MainFrame
+end
+
+function GUI:SetupToggle()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.KeyCode == self.ToggleKey then
+            self:Toggle()
+        end
+    end)
+end
+
+function GUI:Toggle()
+    self.Visible = not self.Visible
+    CreateTween(self.MainFrame, {
+        Position = self.Visible and UDim2.new(0.5, -self.WindowSize.X/2, 0.5, -self.WindowSize.Y/2) or UDim2.new(0.5, -self.WindowSize.X/2, 1, 50)
+    }, 0.4, Enum.EasingStyle.Back)
+end
+
+function GUI:CreateTab(name, icon)
+    local tab = {
+        Name = name,
+        Icon = icon,
+        Sections = {},
+        Active = false
+    }
+    
+    -- Tab Button
+    local TabButton = Instance.new("TextButton")
+    TabButton.Name = name .. "Tab"
+    TabButton.Size = UDim2.new(1, 0, 0, 35)
+    TabButton.BackgroundColor3 = Config.Colors.Primary
+    TabButton.BorderSizePixel = 0
+    TabButton.Text = (icon and icon .. " " or "") .. name
+    TabButton.TextColor3 = Config.Colors.TextSecondary
+    TabButton.TextSize = 14
+    TabButton.Font = Config.Fonts.Main
+    TabButton.Parent = self.TabList
+    CreateCorner(TabButton, 6)
+    
+    -- Tab Content
+    local TabContent = Instance.new("ScrollingFrame")
+    TabContent.Name = name .. "Content"
+    TabContent.Size = UDim2.new(1, 0, 1, 0)
+    TabContent.BackgroundTransparency = 1
+    TabContent.BorderSizePixel = 0
+    TabContent.ScrollBarThickness = 4
+    TabContent.ScrollBarImageColor3 = Config.Colors.Accent
+    TabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+    TabContent.Visible = false
+    TabContent.Parent = self.ContentContainer
+    
+    -- Two Column Container
+    local ColumnContainer = Instance.new("Frame")
+    ColumnContainer.Name = "ColumnContainer"
+    ColumnContainer.Size = UDim2.new(1, 0, 0, 0)
+    ColumnContainer.BackgroundTransparency = 1
+    ColumnContainer.AutomaticSize = Enum.AutomaticSize.Y
+    ColumnContainer.Parent = TabContent
+    
+    -- Left Column
+    local LeftColumn = Instance.new("Frame")
+    LeftColumn.Name = "LeftColumn"
+    LeftColumn.Size = UDim2.new(0.48, 0, 0, 0)
+    LeftColumn.Position = UDim2.new(0, 0, 0, 0)
+    LeftColumn.BackgroundTransparency = 1
+    LeftColumn.AutomaticSize = Enum.AutomaticSize.Y
+    LeftColumn.Parent = ColumnContainer
+    
+    local LeftLayout = Instance.new("UIListLayout")
+    LeftLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    LeftLayout.Padding = UDim.new(0, 10)
+    LeftLayout.Parent = LeftColumn
+    
+    -- Right Column
+    local RightColumn = Instance.new("Frame")
+    RightColumn.Name = "RightColumn"
+    RightColumn.Size = UDim2.new(0.48, 0, 0, 0)
+    RightColumn.Position = UDim2.new(0.52, 0, 0, 0)
+    RightColumn.BackgroundTransparency = 1
+    RightColumn.AutomaticSize = Enum.AutomaticSize.Y
+    RightColumn.Parent = ColumnContainer
+    
+    local RightLayout = Instance.new("UIListLayout")
+    RightLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    RightLayout.Padding = UDim.new(0, 10)
+    RightLayout.Parent = RightColumn
+    
+    tab.Button = TabButton
+    tab.Content = TabContent
+    tab.LeftColumn = LeftColumn
+    tab.RightColumn = RightColumn
+    tab.ColumnContainer = ColumnContainer
+    
+    -- Tab Click Event
+    TabButton.MouseButton1Click:Connect(function()
+        self:SelectTab(tab)
+    end)
+    
+    -- Hover Effects
+    TabButton.MouseEnter:Connect(function()
+        if not tab.Active then
+            CreateTween(TabButton, {BackgroundColor3 = Config.Colors.Secondary}, 0.2)
+        end
+    end)
+    
+    TabButton.MouseLeave:Connect(function()
+        if not tab.Active then
+            CreateTween(TabButton, {BackgroundColor3 = Config.Colors.Primary}, 0.2)
+        end
+    end)
+    
+    table.insert(self.Tabs, tab)
+    
+    -- Auto-select first tab
+    if #self.Tabs == 1 then
+        self:SelectTab(tab)
+    end
+    
+    -- Update tab list size
+    self.TabList.CanvasSize = UDim2.new(0, 0, 0, #self.Tabs * 40)
+    
+    return tab
+end
+
+function GUI:SelectTab(selectedTab)
+    for _, tab in pairs(self.Tabs) do
+        tab.Active = false
+        tab.Content.Visible = false
+        CreateTween(tab.Button, {
+            BackgroundColor3 = Config.Colors.Primary,
+            TextColor3 = Config.Colors.TextSecondary
+        }, 0.2)
+    end
+    
+    selectedTab.Active = true
+    selectedTab.Content.Visible = true
+    CreateTween(selectedTab.Button, {
+        BackgroundColor3 = Config.Colors.Accent,
+        TextColor3 = Config.Colors.Text
+    }, 0.2)
+end
+
+function GUI:CreateSection(tab, name, column)
+    column = column or "left"
+    local targetColumn = column == "left" and tab.LeftColumn or tab.RightColumn
+    
+    local section = {
+        Name = name,
+        Elements = {},
+        Container = targetColumn
+    }
+    
+    -- Section Frame
+    local SectionFrame = Instance.new("Frame")
+    SectionFrame.Name = name .. "Section"
+    SectionFrame.Size = UDim2.new(1, 0, 0, 0)
+    SectionFrame.BackgroundColor3 = Config.Colors.Secondary
+    SectionFrame.BorderSizePixel = 0
+    SectionFrame.AutomaticSize = Enum.AutomaticSize.Y
+    SectionFrame.Parent = targetColumn
+    CreateCorner(SectionFrame, 8)
+    CreateStroke(SectionFrame, Config.Colors.Border)
+    
+    -- Section Header
+    local SectionHeader = Instance.new("TextLabel")
+    SectionHeader.Name = "SectionHeader"
+    SectionHeader.Size = UDim2.new(1, -20, 0, 35)
+    SectionHeader.Position = UDim2.new(0, 10, 0, 5)
+    SectionHeader.BackgroundTransparency = 1
+    SectionHeader.Text = name
+    SectionHeader.TextColor3 = Config.Colors.Text
+    SectionHeader.TextSize = 16
+    SectionHeader.Font = Config.Fonts.Bold
+    SectionHeader.TextXAlignment = Enum.TextXAlignment.Left
+    SectionHeader.Parent = SectionFrame
+    
+    -- Section Content
+    local SectionContent = Instance.new("Frame")
+    SectionContent.Name = "SectionContent"
+    SectionContent.Size = UDim2.new(1, -20, 0, 0)
+    SectionContent.Position = UDim2.new(0, 10, 0, 40)
+    SectionContent.BackgroundTransparency = 1
+    SectionContent.AutomaticSize = Enum.AutomaticSize.Y
+    SectionContent.Parent = SectionFrame
+    
+    local SectionLayout = Instance.new("UIListLayout")
+    SectionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    SectionLayout.Padding = UDim.new(0, 8)
+    SectionLayout.Parent = SectionContent
+    
+    -- Add padding to section frame
+    local SectionPadding = Instance.new("UIPadding")
+    SectionPadding.PaddingBottom = UDim.new(0, 10)
+    SectionPadding.Parent = SectionFrame
+    
+    section.Frame = SectionFrame
+    section.Content = SectionContent
+    
+    table.insert(tab.Sections, section)
+    
+    return section
+end
+
+-- UI ELEMENT METHODS --
 
 -- Toggle Button
-function KelTecLib:CreateToggle(section, name, default, callback)
+function GUI:CreateToggle(section, name, default, callback)
     default = default or false
     callback = callback or function() end
     
@@ -75,7 +598,7 @@ function KelTecLib:CreateToggle(section, name, default, callback)
 end
 
 -- Regular Button
-function KelTecLib:CreateButton(section, name, callback)
+function GUI:CreateButton(section, name, callback)
     callback = callback or function() end
     
     local ButtonFrame = Instance.new("TextButton")
@@ -90,11 +613,6 @@ function KelTecLib:CreateButton(section, name, callback)
     ButtonFrame.Parent = section.Content
     CreateCorner(ButtonFrame, 6)
     
-    local ButtonGradient = CreateGradient(ButtonFrame, ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Config.Colors.Accent),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 200))
-    }, 45)
-    
     ButtonFrame.MouseEnter:Connect(function()
         CreateTween(ButtonFrame, {BackgroundColor3 = Color3.fromRGB(30, 140, 255)}, 0.2)
     end)
@@ -103,21 +621,13 @@ function KelTecLib:CreateButton(section, name, callback)
         CreateTween(ButtonFrame, {BackgroundColor3 = Config.Colors.Accent}, 0.2)
     end)
     
-    ButtonFrame.MouseButton1Down:Connect(function()
-        CreateTween(ButtonFrame, {Size = UDim2.new(1, -4, 0, 33)}, 0.1)
-    end)
-    
-    ButtonFrame.MouseButton1Up:Connect(function()
-        CreateTween(ButtonFrame, {Size = UDim2.new(1, 0, 0, 35)}, 0.1)
-    end)
-    
     ButtonFrame.MouseButton1Click:Connect(callback)
     
     return ButtonFrame
 end
 
 -- Slider
-function KelTecLib:CreateSlider(section, name, min, max, default, callback)
+function GUI:CreateSlider(section, name, min, max, default, callback)
     min = min or 0
     max = max or 100
     default = default or min
@@ -217,10 +727,6 @@ function KelTecLib:CreateSlider(section, name, min, max, default, callback)
         end
     end)
     
-    SliderTrack.MouseButton1Down:Connect(function()
-        UpdateSlider(Mouse.X)
-    end)
-    
     return {
         Frame = SliderFrame,
         SetValue = function(value)
@@ -238,7 +744,7 @@ function KelTecLib:CreateSlider(section, name, min, max, default, callback)
 end
 
 -- Dropdown Menu
-function KelTecLib:CreateDropdown(section, name, options, default, callback)
+function GUI:CreateDropdown(section, name, options, default, callback)
     options = options or {}
     default = default or (options[1] or "None")
     callback = callback or function() end
@@ -254,7 +760,7 @@ function KelTecLib:CreateDropdown(section, name, options, default, callback)
     
     local DropdownButton = Instance.new("TextButton")
     DropdownButton.Name = "DropdownButton"
-    DropdownButton.Size = UDim2.new(1, 0, 1, 0)
+    DropdownButton.Size = UDim2.new(1, -30, 1, 0)
     DropdownButton.BackgroundTransparency = 1
     DropdownButton.Text = name .. ": " .. tostring(default)
     DropdownButton.TextColor3 = Config.Colors.Text
@@ -262,6 +768,10 @@ function KelTecLib:CreateDropdown(section, name, options, default, callback)
     DropdownButton.Font = Config.Fonts.Main
     DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
     DropdownButton.Parent = DropdownFrame
+    
+    local DropdownPadding = Instance.new("UIPadding")
+    DropdownPadding.PaddingLeft = UDim.new(0, 10)
+    DropdownPadding.Parent = DropdownButton
     
     local DropdownIcon = Instance.new("TextLabel")
     DropdownIcon.Name = "DropdownIcon"
@@ -273,11 +783,6 @@ function KelTecLib:CreateDropdown(section, name, options, default, callback)
     DropdownIcon.TextSize = 12
     DropdownIcon.Font = Config.Fonts.Main
     DropdownIcon.Parent = DropdownFrame
-    
-    -- Add padding
-    local DropdownPadding = Instance.new("UIPadding")
-    DropdownPadding.PaddingLeft = UDim.new(0, 10)
-    DropdownPadding.Parent = DropdownButton
     
     local DropdownList = Instance.new("Frame")
     DropdownList.Name = "DropdownList"
@@ -352,7 +857,7 @@ function KelTecLib:CreateDropdown(section, name, options, default, callback)
 end
 
 -- Color Picker
-function KelTecLib:CreateColorPicker(section, name, default, callback)
+function GUI:CreateColorPicker(section, name, default, callback)
     default = default or Color3.fromRGB(255, 255, 255)
     callback = callback or function() end
     
@@ -391,16 +896,15 @@ function KelTecLib:CreateColorPicker(section, name, default, callback)
     local currentColor = default
     
     ColorPreview.MouseButton1Click:Connect(function()
-        -- Simple color picker (cycling through preset colors)
         local colors = {
-            Color3.fromRGB(255, 255, 255), -- White
-            Color3.fromRGB(255, 0, 0),     -- Red
-            Color3.fromRGB(0, 255, 0),     -- Green
-            Color3.fromRGB(0, 0, 255),     -- Blue
-            Color3.fromRGB(255, 255, 0),   -- Yellow
-            Color3.fromRGB(255, 0, 255),   -- Magenta
-            Color3.fromRGB(0, 255, 255),   -- Cyan
-            Color3.fromRGB(0, 0, 0),       -- Black
+            Color3.fromRGB(255, 255, 255),
+            Color3.fromRGB(255, 0, 0),
+            Color3.fromRGB(0, 255, 0),
+            Color3.fromRGB(0, 0, 255),
+            Color3.fromRGB(255, 255, 0),
+            Color3.fromRGB(255, 0, 255),
+            Color3.fromRGB(0, 255, 255),
+            Color3.fromRGB(0, 0, 0),
         }
         
         local currentIndex = 1
@@ -430,8 +934,8 @@ function KelTecLib:CreateColorPicker(section, name, default, callback)
     }
 end
 
--- Paragraph/Text Display
-function KelTecLib:CreateParagraph(section, title, text)
+-- Paragraph
+function GUI:CreateParagraph(section, title, text)
     local ParagraphFrame = Instance.new("Frame")
     ParagraphFrame.Name = title .. "Paragraph"
     ParagraphFrame.Size = UDim2.new(1, 0, 0, 0)
@@ -469,7 +973,6 @@ function KelTecLib:CreateParagraph(section, title, text)
     ParagraphText.AutomaticSize = Enum.AutomaticSize.Y
     ParagraphText.Parent = ParagraphFrame
     
-    -- Add padding
     local ParagraphPadding = Instance.new("UIPadding")
     ParagraphPadding.PaddingBottom = UDim.new(0, 10)
     ParagraphPadding.Parent = ParagraphFrame
@@ -485,26 +988,4 @@ function KelTecLib:CreateParagraph(section, title, text)
     }
 end
 
--- Helper method to update tab content size
-local function UpdateTabContentSize(tab)
-    local leftHeight = tab.LeftColumn.AbsoluteContentSize.Y
-    local rightHeight = tab.RightColumn.AbsoluteContentSize.Y
-    local maxHeight = math.max(leftHeight, rightHeight)
-    
-    tab.ColumnContainer.Size = UDim2.new(1, 0, 0, maxHeight)
-    tab.Content.CanvasSize = UDim2.new(0, 0, 0, maxHeight + 20)
-end
-
--- Auto-update content sizes
-RunService.Heartbeat:Connect(function()
-    for _, gui in pairs(getgenv().KelTecGuis or {}) do
-        for _, tab in pairs(gui.Tabs) do
-            UpdateTabContentSize(tab)
-        end
-    end
-end)
-
--- Store GUI instances globally for cleanup
-if not getgenv().KelTecGuis then
-    getgenv().KelTecGuis = {}
-end
+return KelTecLib
