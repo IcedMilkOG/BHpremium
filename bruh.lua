@@ -1,722 +1,510 @@
--- KelTech Mobile GUI Library v1.0
--- Optimized for mobile devices with touch support
--- Theme: Minty Green & Black/Grey
+-- KelTec GUI Library - UI Elements (Part 2)
+-- Add this to the main library file
 
-local KelGUI = {}
-KelGUI.__index = KelGUI
-
--- Theme Configuration
-KelGUI.theme = {
-    primary = {52, 168, 123},      -- Minty calm green
-    primaryDark = {41, 134, 98},   -- Darker green for hover
-    background = {25, 25, 25},     -- Dark background
-    surface = {40, 40, 40},        -- Surface color
-    surfaceLight = {55, 55, 55},   -- Light surface
-    text = {255, 255, 255},        -- White text
-    textSecondary = {200, 200, 200}, -- Light grey text
-    border = {80, 80, 80},         -- Border color
-    shadow = {0, 0, 0, 50},        -- Shadow
-}
-
--- Configuration
-KelGUI.config = {
-    toggleButtonSize = 50,
-    toggleButtonPosition = {10, 10}, -- Top left
-    cornerRadius = 8,
-    padding = 12,
-    spacing = 8,
-    animationSpeed = 0.3,
-    touchThreshold = 5, -- Pixels for touch detection
-}
-
--- Initialize GUI
-function KelGUI:new(options)
-    local gui = setmetatable({}, KelGUI)
-    gui.isVisible = false
-    gui.isAnimating = false
-    gui.animationTime = 0
-    gui.customToggleButton = options and options.customToggleButton or nil
-    gui.tabs = {}
-    gui.activeTab = 1
-    gui.tabPosition = (options and options.tabPosition) or "top" -- "top" or "left"
-    gui.components = {}
-    gui.dropdowns = {}
-    gui.colorPicker = nil
-    gui.touchStart = nil
-    gui.isDragging = false
+-- Toggle Button
+function KelTecLib:CreateToggle(section, name, default, callback)
+    default = default or false
+    callback = callback or function() end
     
-    -- Screen dimensions (should be set by the host application)
-    gui.screenWidth = 800
-    gui.screenHeight = 600
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Name = name .. "Toggle"
+    ToggleFrame.Size = UDim2.new(1, 0, 0, 35)
+    ToggleFrame.BackgroundColor3 = Config.Colors.Background
+    ToggleFrame.BorderSizePixel = 0
+    ToggleFrame.Parent = section.Content
+    CreateCorner(ToggleFrame, 6)
+    CreateStroke(ToggleFrame, Config.Colors.Border)
     
-    return gui
-end
-
--- Set screen dimensions
-function KelGUI:setScreenSize(width, height)
-    self.screenWidth = width
-    self.screenHeight = height
-end
-
--- Toggle GUI visibility
-function KelGUI:toggle()
-    if not self.isAnimating then
-        self.isVisible = not self.isVisible
-        self.isAnimating = true
-        self.animationTime = 0
+    local ToggleLabel = Instance.new("TextLabel")
+    ToggleLabel.Name = "ToggleLabel"
+    ToggleLabel.Size = UDim2.new(1, -50, 1, 0)
+    ToggleLabel.Position = UDim2.new(0, 10, 0, 0)
+    ToggleLabel.BackgroundTransparency = 1
+    ToggleLabel.Text = name
+    ToggleLabel.TextColor3 = Config.Colors.Text
+    ToggleLabel.TextSize = 14
+    ToggleLabel.Font = Config.Fonts.Main
+    ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    ToggleLabel.Parent = ToggleFrame
+    
+    local ToggleButton = Instance.new("TextButton")
+    ToggleButton.Name = "ToggleButton"
+    ToggleButton.Size = UDim2.new(0, 40, 0, 20)
+    ToggleButton.Position = UDim2.new(1, -45, 0.5, -10)
+    ToggleButton.BackgroundColor3 = default and Config.Colors.Success or Config.Colors.Border
+    ToggleButton.BorderSizePixel = 0
+    ToggleButton.Text = ""
+    ToggleButton.Parent = ToggleFrame
+    CreateCorner(ToggleButton, 10)
+    
+    local ToggleIndicator = Instance.new("Frame")
+    ToggleIndicator.Name = "ToggleIndicator"
+    ToggleIndicator.Size = UDim2.new(0, 16, 0, 16)
+    ToggleIndicator.Position = default and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+    ToggleIndicator.BackgroundColor3 = Config.Colors.Text
+    ToggleIndicator.BorderSizePixel = 0
+    ToggleIndicator.Parent = ToggleButton
+    CreateCorner(ToggleIndicator, 8)
+    
+    local isToggled = default
+    
+    local function UpdateToggle()
+        isToggled = not isToggled
+        CreateTween(ToggleButton, {
+            BackgroundColor3 = isToggled and Config.Colors.Success or Config.Colors.Border
+        }, 0.2)
+        CreateTween(ToggleIndicator, {
+            Position = isToggled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+        }, 0.2)
+        callback(isToggled)
     end
-end
-
--- Add new tab
-function KelGUI:addTab(name, icon)
-    table.insert(self.tabs, {
-        name = name,
-        icon = icon or "⚙",
-        components = {},
-        scrollY = 0
-    })
-    return #self.tabs
-end
-
--- Add component to tab
-function KelGUI:addComponent(tabIndex, component)
-    if self.tabs[tabIndex] then
-        table.insert(self.tabs[tabIndex].components, component)
-    end
-end
-
--- Create Category
-function KelGUI:createCategory(name)
+    
+    ToggleButton.MouseButton1Click:Connect(UpdateToggle)
+    
     return {
-        type = "category",
-        name = name,
-        expanded = true
-    }
-end
-
--- Create Toggle Button
-function KelGUI:createToggle(name, value, callback, column)
-    return {
-        type = "toggle",
-        name = name,
-        value = value or false,
-        callback = callback or function() end,
-        column = column or 1
-    }
-end
-
--- Create Slider
-function KelGUI:createSlider(name, value, min, max, callback, column)
-    return {
-        type = "slider",
-        name = name,
-        value = value or 0,
-        min = min or 0,
-        max = max or 100,
-        callback = callback or function() end,
-        column = column or 1,
-        isDragging = false
-    }
-end
-
--- Create Dropdown
-function KelGUI:createDropdown(name, options, selected, callback, column)
-    return {
-        type = "dropdown",
-        name = name,
-        options = options or {},
-        selected = selected or 1,
-        callback = callback or function() end,
-        column = column or 1,
-        isOpen = false
-    }
-end
-
--- Create Color Picker Button
-function KelGUI:createColorPicker(name, color, callback, column)
-    return {
-        type = "colorpicker",
-        name = name,
-        color = color or {255, 255, 255},
-        callback = callback or function() end,
-        column = column or 1
-    }
-end
-
--- Update function (call this in your main loop)
-function KelGUI:update(dt, mouseX, mouseY, isPressed, justPressed, justReleased)
-    -- Update animations
-    if self.isAnimating then
-        self.animationTime = self.animationTime + dt
-        if self.animationTime >= self.config.animationSpeed then
-            self.isAnimating = false
-            self.animationTime = self.config.animationSpeed
+        Frame = ToggleFrame,
+        SetValue = function(value)
+            if value ~= isToggled then
+                UpdateToggle()
+            end
+        end,
+        GetValue = function()
+            return isToggled
         end
-    end
-    
-    -- Handle touch/mouse input
-    if justPressed then
-        self:handleTouchStart(mouseX, mouseY)
-    elseif isPressed then
-        self:handleTouchMove(mouseX, mouseY)
-    elseif justReleased then
-        self:handleTouchEnd(mouseX, mouseY)
-    end
+    }
 end
 
--- Handle touch start
-function KelGUI:handleTouchStart(x, y)
-    self.touchStart = {x = x, y = y}
-    self.isDragging = false
+-- Regular Button
+function KelTecLib:CreateButton(section, name, callback)
+    callback = callback or function() end
     
-    -- Check toggle button
-    local toggleX, toggleY = self.config.toggleButtonPosition[1], self.config.toggleButtonPosition[2]
-    local toggleSize = self.config.toggleButtonSize
+    local ButtonFrame = Instance.new("TextButton")
+    ButtonFrame.Name = name .. "Button"
+    ButtonFrame.Size = UDim2.new(1, 0, 0, 35)
+    ButtonFrame.BackgroundColor3 = Config.Colors.Accent
+    ButtonFrame.BorderSizePixel = 0
+    ButtonFrame.Text = name
+    ButtonFrame.TextColor3 = Config.Colors.Text
+    ButtonFrame.TextSize = 14
+    ButtonFrame.Font = Config.Fonts.Main
+    ButtonFrame.Parent = section.Content
+    CreateCorner(ButtonFrame, 6)
     
-    if x >= toggleX and x <= toggleX + toggleSize and
-       y >= toggleY and y <= toggleY + toggleSize then
-        self:toggle()
-        return
-    end
+    local ButtonGradient = CreateGradient(ButtonFrame, ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Config.Colors.Accent),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 200))
+    }, 45)
     
-    if not self.isVisible then return end
+    ButtonFrame.MouseEnter:Connect(function()
+        CreateTween(ButtonFrame, {BackgroundColor3 = Color3.fromRGB(30, 140, 255)}, 0.2)
+    end)
     
-    -- Handle component interactions
-    self:handleComponentTouch(x, y, true)
+    ButtonFrame.MouseLeave:Connect(function()
+        CreateTween(ButtonFrame, {BackgroundColor3 = Config.Colors.Accent}, 0.2)
+    end)
+    
+    ButtonFrame.MouseButton1Down:Connect(function()
+        CreateTween(ButtonFrame, {Size = UDim2.new(1, -4, 0, 33)}, 0.1)
+    end)
+    
+    ButtonFrame.MouseButton1Up:Connect(function()
+        CreateTween(ButtonFrame, {Size = UDim2.new(1, 0, 0, 35)}, 0.1)
+    end)
+    
+    ButtonFrame.MouseButton1Click:Connect(callback)
+    
+    return ButtonFrame
 end
 
--- Handle touch move
-function KelGUI:handleTouchMove(x, y)
-    if not self.touchStart then return end
+-- Slider
+function KelTecLib:CreateSlider(section, name, min, max, default, callback)
+    min = min or 0
+    max = max or 100
+    default = default or min
+    callback = callback or function() end
     
-    local dx = x - self.touchStart.x
-    local dy = y - self.touchStart.y
-    local distance = math.sqrt(dx*dx + dy*dy)
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Name = name .. "Slider"
+    SliderFrame.Size = UDim2.new(1, 0, 0, 50)
+    SliderFrame.BackgroundColor3 = Config.Colors.Background
+    SliderFrame.BorderSizePixel = 0
+    SliderFrame.Parent = section.Content
+    CreateCorner(SliderFrame, 6)
+    CreateStroke(SliderFrame, Config.Colors.Border)
     
-    if distance > self.config.touchThreshold then
-        self.isDragging = true
+    local SliderLabel = Instance.new("TextLabel")
+    SliderLabel.Name = "SliderLabel"
+    SliderLabel.Size = UDim2.new(0.7, 0, 0, 20)
+    SliderLabel.Position = UDim2.new(0, 10, 0, 5)
+    SliderLabel.BackgroundTransparency = 1
+    SliderLabel.Text = name
+    SliderLabel.TextColor3 = Config.Colors.Text
+    SliderLabel.TextSize = 14
+    SliderLabel.Font = Config.Fonts.Main
+    SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SliderLabel.Parent = SliderFrame
+    
+    local SliderValue = Instance.new("TextLabel")
+    SliderValue.Name = "SliderValue"
+    SliderValue.Size = UDim2.new(0.3, -10, 0, 20)
+    SliderValue.Position = UDim2.new(0.7, 0, 0, 5)
+    SliderValue.BackgroundTransparency = 1
+    SliderValue.Text = tostring(default)
+    SliderValue.TextColor3 = Config.Colors.Accent
+    SliderValue.TextSize = 14
+    SliderValue.Font = Config.Fonts.Bold
+    SliderValue.TextXAlignment = Enum.TextXAlignment.Right
+    SliderValue.Parent = SliderFrame
+    
+    local SliderTrack = Instance.new("Frame")
+    SliderTrack.Name = "SliderTrack"
+    SliderTrack.Size = UDim2.new(1, -20, 0, 6)
+    SliderTrack.Position = UDim2.new(0, 10, 1, -15)
+    SliderTrack.BackgroundColor3 = Config.Colors.Secondary
+    SliderTrack.BorderSizePixel = 0
+    SliderTrack.Parent = SliderFrame
+    CreateCorner(SliderTrack, 3)
+    
+    local SliderFill = Instance.new("Frame")
+    SliderFill.Name = "SliderFill"
+    SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    SliderFill.BackgroundColor3 = Config.Colors.Accent
+    SliderFill.BorderSizePixel = 0
+    SliderFill.Parent = SliderTrack
+    CreateCorner(SliderFill, 3)
+    
+    local SliderButton = Instance.new("TextButton")
+    SliderButton.Name = "SliderButton"
+    SliderButton.Size = UDim2.new(0, 16, 0, 16)
+    SliderButton.Position = UDim2.new((default - min) / (max - min), -8, 0.5, -8)
+    SliderButton.BackgroundColor3 = Config.Colors.Text
+    SliderButton.BorderSizePixel = 0
+    SliderButton.Text = ""
+    SliderButton.Parent = SliderTrack
+    CreateCorner(SliderButton, 8)
+    CreateStroke(SliderButton, Config.Colors.Accent, 2)
+    
+    local currentValue = default
+    local dragging = false
+    
+    local function UpdateSlider(inputPos)
+        local trackPos = SliderTrack.AbsolutePosition.X
+        local trackSize = SliderTrack.AbsoluteSize.X
+        local relativePos = math.clamp((inputPos - trackPos) / trackSize, 0, 1)
+        
+        currentValue = math.floor(min + (relativePos * (max - min)))
+        SliderValue.Text = tostring(currentValue)
+        
+        CreateTween(SliderFill, {Size = UDim2.new(relativePos, 0, 1, 0)}, 0.1)
+        CreateTween(SliderButton, {Position = UDim2.new(relativePos, -8, 0.5, -8)}, 0.1)
+        
+        callback(currentValue)
     end
     
-    if self.isVisible then
-        self:handleComponentTouch(x, y, false)
-    end
+    SliderButton.MouseButton1Down:Connect(function()
+        dragging = true
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            UpdateSlider(input.Position.X)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    SliderTrack.MouseButton1Down:Connect(function()
+        UpdateSlider(Mouse.X)
+    end)
+    
+    return {
+        Frame = SliderFrame,
+        SetValue = function(value)
+            value = math.clamp(value, min, max)
+            currentValue = value
+            SliderValue.Text = tostring(value)
+            local relativePos = (value - min) / (max - min)
+            SliderFill.Size = UDim2.new(relativePos, 0, 1, 0)
+            SliderButton.Position = UDim2.new(relativePos, -8, 0.5, -8)
+        end,
+        GetValue = function()
+            return currentValue
+        end
+    }
 end
 
--- Handle touch end
-function KelGUI:handleTouchEnd(x, y)
-    if self.isVisible and not self.isDragging then
-        self:handleComponentTouch(x, y, false, true)
+-- Dropdown Menu
+function KelTecLib:CreateDropdown(section, name, options, default, callback)
+    options = options or {}
+    default = default or (options[1] or "None")
+    callback = callback or function() end
+    
+    local DropdownFrame = Instance.new("Frame")
+    DropdownFrame.Name = name .. "Dropdown"
+    DropdownFrame.Size = UDim2.new(1, 0, 0, 35)
+    DropdownFrame.BackgroundColor3 = Config.Colors.Background
+    DropdownFrame.BorderSizePixel = 0
+    DropdownFrame.Parent = section.Content
+    CreateCorner(DropdownFrame, 6)
+    CreateStroke(DropdownFrame, Config.Colors.Border)
+    
+    local DropdownButton = Instance.new("TextButton")
+    DropdownButton.Name = "DropdownButton"
+    DropdownButton.Size = UDim2.new(1, 0, 1, 0)
+    DropdownButton.BackgroundTransparency = 1
+    DropdownButton.Text = name .. ": " .. tostring(default)
+    DropdownButton.TextColor3 = Config.Colors.Text
+    DropdownButton.TextSize = 14
+    DropdownButton.Font = Config.Fonts.Main
+    DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+    DropdownButton.Parent = DropdownFrame
+    
+    local DropdownIcon = Instance.new("TextLabel")
+    DropdownIcon.Name = "DropdownIcon"
+    DropdownIcon.Size = UDim2.new(0, 20, 1, 0)
+    DropdownIcon.Position = UDim2.new(1, -25, 0, 0)
+    DropdownIcon.BackgroundTransparency = 1
+    DropdownIcon.Text = "▼"
+    DropdownIcon.TextColor3 = Config.Colors.TextSecondary
+    DropdownIcon.TextSize = 12
+    DropdownIcon.Font = Config.Fonts.Main
+    DropdownIcon.Parent = DropdownFrame
+    
+    -- Add padding
+    local DropdownPadding = Instance.new("UIPadding")
+    DropdownPadding.PaddingLeft = UDim.new(0, 10)
+    DropdownPadding.Parent = DropdownButton
+    
+    local DropdownList = Instance.new("Frame")
+    DropdownList.Name = "DropdownList"
+    DropdownList.Size = UDim2.new(1, 0, 0, #options * 30)
+    DropdownList.Position = UDim2.new(0, 0, 1, 5)
+    DropdownList.BackgroundColor3 = Config.Colors.Secondary
+    DropdownList.BorderSizePixel = 0
+    DropdownList.Visible = false
+    DropdownList.ZIndex = 10
+    DropdownList.Parent = DropdownFrame
+    CreateCorner(DropdownList, 6)
+    CreateStroke(DropdownList, Config.Colors.Border)
+    
+    local DropdownListLayout = Instance.new("UIListLayout")
+    DropdownListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    DropdownListLayout.Parent = DropdownList
+    
+    local currentValue = default
+    local isOpen = false
+    
+    for i, option in ipairs(options) do
+        local OptionButton = Instance.new("TextButton")
+        OptionButton.Name = "Option" .. i
+        OptionButton.Size = UDim2.new(1, 0, 0, 30)
+        OptionButton.BackgroundTransparency = 1
+        OptionButton.Text = tostring(option)
+        OptionButton.TextColor3 = Config.Colors.Text
+        OptionButton.TextSize = 13
+        OptionButton.Font = Config.Fonts.Main
+        OptionButton.TextXAlignment = Enum.TextXAlignment.Left
+        OptionButton.Parent = DropdownList
+        
+        local OptionPadding = Instance.new("UIPadding")
+        OptionPadding.PaddingLeft = UDim.new(0, 10)
+        OptionPadding.Parent = OptionButton
+        
+        OptionButton.MouseEnter:Connect(function()
+            CreateTween(OptionButton, {BackgroundTransparency = 0.7}, 0.1)
+            OptionButton.BackgroundColor3 = Config.Colors.Accent
+        end)
+        
+        OptionButton.MouseLeave:Connect(function()
+            CreateTween(OptionButton, {BackgroundTransparency = 1}, 0.1)
+        end)
+        
+        OptionButton.MouseButton1Click:Connect(function()
+            currentValue = option
+            DropdownButton.Text = name .. ": " .. tostring(option)
+            DropdownList.Visible = false
+            isOpen = false
+            CreateTween(DropdownIcon, {Rotation = 0}, 0.2)
+            callback(option)
+        end)
     end
     
-    -- Reset sliders
-    if self.tabs[self.activeTab] then
-        for _, component in ipairs(self.tabs[self.activeTab].components) do
-            if component.type == "slider" then
-                component.isDragging = false
+    DropdownButton.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        DropdownList.Visible = isOpen
+        CreateTween(DropdownIcon, {Rotation = isOpen and 180 or 0}, 0.2)
+    end)
+    
+    return {
+        Frame = DropdownFrame,
+        SetValue = function(value)
+            currentValue = value
+            DropdownButton.Text = name .. ": " .. tostring(value)
+        end,
+        GetValue = function()
+            return currentValue
+        end
+    }
+end
+
+-- Color Picker
+function KelTecLib:CreateColorPicker(section, name, default, callback)
+    default = default or Color3.fromRGB(255, 255, 255)
+    callback = callback or function() end
+    
+    local ColorFrame = Instance.new("Frame")
+    ColorFrame.Name = name .. "ColorPicker"
+    ColorFrame.Size = UDim2.new(1, 0, 0, 35)
+    ColorFrame.BackgroundColor3 = Config.Colors.Background
+    ColorFrame.BorderSizePixel = 0
+    ColorFrame.Parent = section.Content
+    CreateCorner(ColorFrame, 6)
+    CreateStroke(ColorFrame, Config.Colors.Border)
+    
+    local ColorLabel = Instance.new("TextLabel")
+    ColorLabel.Name = "ColorLabel"
+    ColorLabel.Size = UDim2.new(1, -45, 1, 0)
+    ColorLabel.Position = UDim2.new(0, 10, 0, 0)
+    ColorLabel.BackgroundTransparency = 1
+    ColorLabel.Text = name
+    ColorLabel.TextColor3 = Config.Colors.Text
+    ColorLabel.TextSize = 14
+    ColorLabel.Font = Config.Fonts.Main
+    ColorLabel.TextXAlignment = Enum.TextXAlignment.Left
+    ColorLabel.Parent = ColorFrame
+    
+    local ColorPreview = Instance.new("TextButton")
+    ColorPreview.Name = "ColorPreview"
+    ColorPreview.Size = UDim2.new(0, 25, 0, 25)
+    ColorPreview.Position = UDim2.new(1, -35, 0.5, -12.5)
+    ColorPreview.BackgroundColor3 = default
+    ColorPreview.BorderSizePixel = 0
+    ColorPreview.Text = ""
+    ColorPreview.Parent = ColorFrame
+    CreateCorner(ColorPreview, 4)
+    CreateStroke(ColorPreview, Config.Colors.Border)
+    
+    local currentColor = default
+    
+    ColorPreview.MouseButton1Click:Connect(function()
+        -- Simple color picker (cycling through preset colors)
+        local colors = {
+            Color3.fromRGB(255, 255, 255), -- White
+            Color3.fromRGB(255, 0, 0),     -- Red
+            Color3.fromRGB(0, 255, 0),     -- Green
+            Color3.fromRGB(0, 0, 255),     -- Blue
+            Color3.fromRGB(255, 255, 0),   -- Yellow
+            Color3.fromRGB(255, 0, 255),   -- Magenta
+            Color3.fromRGB(0, 255, 255),   -- Cyan
+            Color3.fromRGB(0, 0, 0),       -- Black
+        }
+        
+        local currentIndex = 1
+        for i, color in ipairs(colors) do
+            if color == currentColor then
+                currentIndex = i
+                break
             end
         end
-    end
+        
+        local nextIndex = (currentIndex % #colors) + 1
+        currentColor = colors[nextIndex]
+        
+        CreateTween(ColorPreview, {BackgroundColor3 = currentColor}, 0.2)
+        callback(currentColor)
+    end)
     
-    self.touchStart = nil
-    self.isDragging = false
-end
-
--- Handle component touch interactions
-function KelGUI:handleComponentTouch(x, y, isStart, isEnd)
-    if not self.tabs[self.activeTab] then return end
-    
-    local guiX, guiY, guiW, guiH = self:getGUIBounds()
-    
-    -- Handle tab clicks
-    if self:isPointInTabs(x, y, guiX, guiY, guiW, guiH) then
-        local tabIndex = self:getTabAtPoint(x, y, guiX, guiY, guiW, guiH)
-        if tabIndex and isEnd then
-            self.activeTab = tabIndex
+    return {
+        Frame = ColorFrame,
+        SetValue = function(value)
+            currentColor = value
+            ColorPreview.BackgroundColor3 = value
+        end,
+        GetValue = function()
+            return currentColor
         end
-        return
-    end
-    
-    -- Handle content area
-    local contentX, contentY, contentW, contentH = self:getContentBounds(guiX, guiY, guiW, guiH)
-    local columnW = (contentW - self.config.spacing) / 2
-    
-    local yOffset = contentY + self.config.padding - self.tabs[self.activeTab].scrollY
-    
-    for _, component in ipairs(self.tabs[self.activeTab].components) do
-        local compX = contentX + self.config.padding
-        if component.column == 2 then
-            compX = compX + columnW + self.config.spacing
-        end
-        
-        local compY = yOffset
-        local compW = columnW - self.config.padding * 2
-        local compH = self:getComponentHeight(component)
-        
-        if component.type == "category" then
-            compW = contentW - self.config.padding * 2
-        end
-        
-        if x >= compX and x <= compX + compW and y >= compY and y <= compY + compH then
-            self:handleComponentInteraction(component, x - compX, y - compY, isStart, isEnd)
-            break
-        end
-        
-        yOffset = yOffset + compH + self.config.spacing
-    end
-end
-
--- Handle individual component interactions
-function KelGUI:handleComponentInteraction(component, localX, localY, isStart, isEnd)
-    if component.type == "toggle" and isEnd then
-        component.value = not component.value
-        component.callback(component.value)
-        
-    elseif component.type == "slider" then
-        if isStart then
-            component.isDragging = true
-        end
-        if component.isDragging then
-            local sliderY = 30
-            local sliderW = 200
-            local percentage = math.max(0, math.min(1, localX / sliderW))
-            component.value = component.min + (component.max - component.min) * percentage
-            component.callback(component.value)
-        end
-        
-    elseif component.type == "dropdown" and isEnd then
-        component.isOpen = not component.isOpen
-        
-    elseif component.type == "colorpicker" and isEnd then
-        self:openColorPicker(component)
-        
-    elseif component.type == "category" and isEnd then
-        component.expanded = not component.expanded
-    end
-end
-
--- Open color picker popup
-function KelGUI:openColorPicker(component)
-    self.colorPicker = {
-        component = component,
-        hue = 0,
-        saturation = 1,
-        brightness = 1,
-        alpha = 1
     }
 end
 
--- Close color picker
-function KelGUI:closeColorPicker()
-    self.colorPicker = nil
+-- Paragraph/Text Display
+function KelTecLib:CreateParagraph(section, title, text)
+    local ParagraphFrame = Instance.new("Frame")
+    ParagraphFrame.Name = title .. "Paragraph"
+    ParagraphFrame.Size = UDim2.new(1, 0, 0, 0)
+    ParagraphFrame.BackgroundColor3 = Config.Colors.Background
+    ParagraphFrame.BorderSizePixel = 0
+    ParagraphFrame.AutomaticSize = Enum.AutomaticSize.Y
+    ParagraphFrame.Parent = section.Content
+    CreateCorner(ParagraphFrame, 6)
+    CreateStroke(ParagraphFrame, Config.Colors.Border)
+    
+    local ParagraphTitle = Instance.new("TextLabel")
+    ParagraphTitle.Name = "ParagraphTitle"
+    ParagraphTitle.Size = UDim2.new(1, -20, 0, 25)
+    ParagraphTitle.Position = UDim2.new(0, 10, 0, 8)
+    ParagraphTitle.BackgroundTransparency = 1
+    ParagraphTitle.Text = title
+    ParagraphTitle.TextColor3 = Config.Colors.Text
+    ParagraphTitle.TextSize = 15
+    ParagraphTitle.Font = Config.Fonts.Bold
+    ParagraphTitle.TextXAlignment = Enum.TextXAlignment.Left
+    ParagraphTitle.Parent = ParagraphFrame
+    
+    local ParagraphText = Instance.new("TextLabel")
+    ParagraphText.Name = "ParagraphText"
+    ParagraphText.Size = UDim2.new(1, -20, 0, 0)
+    ParagraphText.Position = UDim2.new(0, 10, 0, 35)
+    ParagraphText.BackgroundTransparency = 1
+    ParagraphText.Text = text
+    ParagraphText.TextColor3 = Config.Colors.TextSecondary
+    ParagraphText.TextSize = 13
+    ParagraphText.Font = Config.Fonts.Main
+    ParagraphText.TextXAlignment = Enum.TextXAlignment.Left
+    ParagraphText.TextYAlignment = Enum.TextYAlignment.Top
+    ParagraphText.TextWrapped = true
+    ParagraphText.AutomaticSize = Enum.AutomaticSize.Y
+    ParagraphText.Parent = ParagraphFrame
+    
+    -- Add padding
+    local ParagraphPadding = Instance.new("UIPadding")
+    ParagraphPadding.PaddingBottom = UDim.new(0, 10)
+    ParagraphPadding.Parent = ParagraphFrame
+    
+    return {
+        Frame = ParagraphFrame,
+        SetText = function(newText)
+            ParagraphText.Text = newText
+        end,
+        SetTitle = function(newTitle)
+            ParagraphTitle.Text = newTitle
+        end
+    }
 end
 
--- Draw function (call this in your draw loop)
-function KelGUI:draw()
-    -- Draw toggle button
-    self:drawToggleButton()
+-- Helper method to update tab content size
+local function UpdateTabContentSize(tab)
+    local leftHeight = tab.LeftColumn.AbsoluteContentSize.Y
+    local rightHeight = tab.RightColumn.AbsoluteContentSize.Y
+    local maxHeight = math.max(leftHeight, rightHeight)
     
-    if not self.isVisible and not self.isAnimating then return end
-    
-    -- Calculate animation progress
-    local progress = 1
-    if self.isAnimating then
-        progress = self.animationTime / self.config.animationSpeed
-        if not self.isVisible then
-            progress = 1 - progress
+    tab.ColumnContainer.Size = UDim2.new(1, 0, 0, maxHeight)
+    tab.Content.CanvasSize = UDim2.new(0, 0, 0, maxHeight + 20)
+end
+
+-- Auto-update content sizes
+RunService.Heartbeat:Connect(function()
+    for _, gui in pairs(getgenv().KelTecGuis or {}) do
+        for _, tab in pairs(gui.Tabs) do
+            UpdateTabContentSize(tab)
         end
     end
-    
-    -- Draw main GUI
-    self:drawGUI(progress)
-    
-    -- Draw color picker popup
-    if self.colorPicker then
-        self:drawColorPicker()
-    end
-end
+end)
 
--- Draw toggle button
-function KelGUI:drawToggleButton()
-    local x, y = self.config.toggleButtonPosition[1], self.config.toggleButtonPosition[2]
-    local size = self.config.toggleButtonSize
-    
-    if self.customToggleButton then
-        self.customToggleButton(x, y, size, self.isVisible)
-    else
-        -- Default toggle button
-        self:setColor(self.theme.primary)
-        self:drawRoundedRect(x, y, size, size, self.config.cornerRadius)
-        
-        self:setColor(self.theme.text)
-        local iconX, iconY = x + size/2, y + size/2
-        if self.isVisible then
-            self:drawText("✕", iconX, iconY, "center")
-        else
-            self:drawText("≡", iconX, iconY, "center")
-        end
-    end
+-- Store GUI instances globally for cleanup
+if not getgenv().KelTecGuis then
+    getgenv().KelTecGuis = {}
 end
-
--- Draw main GUI
-function KelGUI:drawGUI(progress)
-    local guiX, guiY, guiW, guiH = self:getGUIBounds()
-    
-    -- Apply animation offset
-    if self.tabPosition == "left" then
-        guiX = guiX - (guiW * (1 - progress))
-    else
-        guiY = guiY - (guiH * (1 - progress))
-    end
-    
-    -- Draw shadow
-    self:setColor(self.theme.shadow)
-    self:drawRoundedRect(guiX + 4, guiY + 4, guiW, guiH, self.config.cornerRadius)
-    
-    -- Draw main background
-    self:setColor(self.theme.background)
-    self:drawRoundedRect(guiX, guiY, guiW, guiH, self.config.cornerRadius)
-    
-    -- Draw tabs
-    self:drawTabs(guiX, guiY, guiW, guiH)
-    
-    -- Draw content
-    self:drawContent(guiX, guiY, guiW, guiH)
-end
-
--- Draw tabs
-function KelGUI:drawTabs(guiX, guiY, guiW, guiH)
-    local tabHeight = 50
-    local tabWidth = 120
-    
-    for i, tab in ipairs(self.tabs) do
-        local tabX, tabY
-        
-        if self.tabPosition == "top" then
-            tabX = guiX + (i - 1) * tabWidth
-            tabY = guiY
-        else -- left
-            tabX = guiX
-            tabY = guiY + (i - 1) * tabHeight
-        end
-        
-        -- Tab background
-        if i == self.activeTab then
-            self:setColor(self.theme.primary)
-        else
-            self:setColor(self.theme.surface)
-        end
-        
-        if self.tabPosition == "top" then
-            self:drawRoundedRect(tabX, tabY, tabWidth, tabHeight, self.config.cornerRadius, true, true, false, false)
-        else
-            self:drawRoundedRect(tabX, tabY, tabWidth, tabHeight, self.config.cornerRadius, true, false, false, true)
-        end
-        
-        -- Tab text
-        self:setColor(self.theme.text)
-        local textX = tabX + tabWidth/2
-        local textY = tabY + tabHeight/2
-        self:drawText(tab.icon .. " " .. tab.name, textX, textY, "center")
-    end
-end
-
--- Draw content area
-function KelGUI:drawContent(guiX, guiY, guiW, guiH)
-    local contentX, contentY, contentW, contentH = self:getContentBounds(guiX, guiY, guiW, guiH)
-    
-    -- Content background
-    self:setColor(self.theme.surface)
-    self:drawRect(contentX, contentY, contentW, contentH)
-    
-    if not self.tabs[self.activeTab] then return end
-    
-    -- Draw components in two columns
-    local columnW = (contentW - self.config.spacing) / 2
-    local yOffset = contentY + self.config.padding - self.tabs[self.activeTab].scrollY
-    
-    for _, component in ipairs(self.tabs[self.activeTab].components) do
-        local compX = contentX + self.config.padding
-        if component.column == 2 then
-            compX = compX + columnW + self.config.spacing
-        end
-        
-        local compY = yOffset
-        local compW = columnW - self.config.padding * 2
-        
-        if component.type == "category" then
-            compW = contentW - self.config.padding * 2
-        end
-        
-        self:drawComponent(component, compX, compY, compW)
-        yOffset = yOffset + self:getComponentHeight(component) + self.config.spacing
-    end
-end
-
--- Draw individual component
-function KelGUI:drawComponent(component, x, y, width)
-    if component.type == "category" then
-        self:drawCategory(component, x, y, width)
-    elseif component.type == "toggle" then
-        self:drawToggle(component, x, y, width)
-    elseif component.type == "slider" then
-        self:drawSlider(component, x, y, width)
-    elseif component.type == "dropdown" then
-        self:drawDropdown(component, x, y, width)
-    elseif component.type == "colorpicker" then
-        self:drawColorPickerButton(component, x, y, width)
-    end
-end
-
--- Draw category
-function KelGUI:drawCategory(component, x, y, width)
-    local height = 40
-    
-    -- Background
-    self:setColor(self.theme.surfaceLight)
-    self:drawRoundedRect(x, y, width, height, self.config.cornerRadius/2)
-    
-    -- Text
-    self:setColor(self.theme.text)
-    self:drawText(component.name, x + self.config.padding, y + height/2, "left")
-    
-    -- Expand/collapse indicator
-    local indicator = component.expanded and "▼" or "▶"
-    self:drawText(indicator, x + width - 20, y + height/2, "center")
-end
-
--- Draw toggle button
-function KelGUI:drawToggle(component, x, y, width)
-    local height = 35
-    local toggleW = 50
-    local toggleH = 25
-    
-    -- Label
-    self:setColor(self.theme.text)
-    self:drawText(component.name, x, y + height/2, "left")
-    
-    -- Toggle background
-    local toggleX = x + width - toggleW
-    local toggleY = y + (height - toggleH) / 2
-    
-    if component.value then
-        self:setColor(self.theme.primary)
-    else
-        self:setColor(self.theme.border)
-    end
-    self:drawRoundedRect(toggleX, toggleY, toggleW, toggleH, toggleH/2)
-    
-    -- Toggle handle
-    self:setColor(self.theme.text)
-    local handleX = toggleX + (component.value and (toggleW - toggleH + 4) or 4)
-    local handleY = toggleY + 2
-    self:drawRoundedRect(handleX, handleY, toggleH - 4, toggleH - 4, (toggleH - 4)/2)
-end
-
--- Draw slider
-function KelGUI:drawSlider(component, x, y, width)
-    local height = 50
-    local sliderH = 6
-    local handleSize = 20
-    
-    -- Label
-    self:setColor(self.theme.text)
-    self:drawText(component.name, x, y + 10, "left")
-    
-    -- Value
-    local valueText = string.format("%.1f", component.value)
-    self:drawText(valueText, x + width - 40, y + 10, "right")
-    
-    -- Slider track
-    local sliderY = y + 30
-    self:setColor(self.theme.border)
-    self:drawRoundedRect(x, sliderY, width, sliderH, sliderH/2)
-    
-    -- Slider fill
-    local percentage = (component.value - component.min) / (component.max - component.min)
-    local fillW = width * percentage
-    self:setColor(self.theme.primary)
-    self:drawRoundedRect(x, sliderY, fillW, sliderH, sliderH/2)
-    
-    -- Slider handle
-    local handleX = x + fillW - handleSize/2
-    local handleY = sliderY - (handleSize - sliderH)/2
-    self:setColor(self.theme.text)
-    self:drawRoundedRect(handleX, handleY, handleSize, handleSize, handleSize/2)
-end
-
--- Draw dropdown
-function KelGUI:drawDropdown(component, x, y, width)
-    local height = 35
-    
-    -- Background
-    self:setColor(self.theme.surfaceLight)
-    self:drawRoundedRect(x, y, width, height, self.config.cornerRadius/2)
-    
-    -- Border
-    self:setColor(self.theme.border)
-    self:drawRoundedRectOutline(x, y, width, height, self.config.cornerRadius/2)
-    
-    -- Selected text
-    self:setColor(self.theme.text)
-    local selectedText = component.options[component.selected] or "None"
-    self:drawText(component.name .. ": " .. selectedText, x + self.config.padding, y + height/2, "left")
-    
-    -- Dropdown arrow
-    self:drawText(component.isOpen and "▲" or "▼", x + width - 20, y + height/2, "center")
-    
-    -- Dropdown options
-    if component.isOpen then
-        local optionHeight = 30
-        local dropdownY = y + height
-        local dropdownH = #component.options * optionHeight
-        
-        -- Options background
-        self:setColor(self.theme.surface)
-        self:drawRect(x, dropdownY, width, dropdownH)
-        
-        -- Options border
-        self:setColor(self.theme.border)
-        self:drawRectOutline(x, dropdownY, width, dropdownH)
-        
-        -- Options
-        for i, option in ipairs(component.options) do
-            local optionY = dropdownY + (i - 1) * optionHeight
-            
-            if i == component.selected then
-                self:setColor(self.theme.primary)
-                self:drawRect(x, optionY, width, optionHeight)
-            end
-            
-            self:setColor(self.theme.text)
-            self:drawText(option, x + self.config.padding, optionY + optionHeight/2, "left")
-        end
-    end
-end
-
--- Draw color picker button
-function KelGUI:drawColorPickerButton(component, x, y, width)
-    local height = 35
-    local colorSize = 25
-    
-    -- Label
-    self:setColor(self.theme.text)
-    self:drawText(component.name, x, y + height/2, "left")
-    
-    -- Color preview
-    local colorX = x + width - colorSize - 5
-    local colorY = y + (height - colorSize) / 2
-    
-    self:setColor(component.color)
-    self:drawRoundedRect(colorX, colorY, colorSize, colorSize, self.config.cornerRadius/2)
-    
-    self:setColor(self.theme.border)
-    self:drawRoundedRectOutline(colorX, colorY, colorSize, colorSize, self.config.cornerRadius/2)
-end
-
--- Draw color picker popup
-function KelGUI:drawColorPicker()
-    if not self.colorPicker then return end
-    
-    local pickerW, pickerH = 300, 400
-    local pickerX = (self.screenWidth - pickerW) / 2
-    local pickerY = (self.screenHeight - pickerH) / 2
-    
-    -- Background
-    self:setColor(self.theme.background)
-    self:drawRoundedRect(pickerX, pickerY, pickerW, pickerH, self.config.cornerRadius)
-    
-    -- Border
-    self:setColor(self.theme.border)
-    self:drawRoundedRectOutline(pickerX, pickerY, pickerW, pickerH, self.config.cornerRadius)
-    
-    -- Title
-    self:setColor(self.theme.text)
-    self:drawText("Color Picker", pickerX + pickerW/2, pickerY + 30, "center")
-    
-    -- Color preview
-    local previewY = pickerY + 60
-    local previewH = 40
-    self:setColor(self.colorPicker.component.color)
-    self:drawRoundedRect(pickerX + 20, previewY, pickerW - 40, previewH, self.config.cornerRadius/2)
-    
-    -- Close button
-    self:setColor(self.theme.primary)
-    self:drawRoundedRect(pickerX + 20, pickerY + pickerH - 60, pickerW - 40, 40, self.config.cornerRadius/2)
-    
-    self:setColor(self.theme.text)
-    self:drawText("Close", pickerX + pickerW/2, pickerY + pickerH - 40, "center")
-end
-
--- Utility functions
-function KelGUI:getGUIBounds()
-    local width = math.min(600, self.screenWidth * 0.9)
-    local height = math.min(500, self.screenHeight * 0.8)
-    local x = (self.screenWidth - width) / 2
-    local y = (self.screenHeight - height) / 2
-    return x, y, width, height
-end
-
-function KelGUI:getContentBounds(guiX, guiY, guiW, guiH)
-    local tabHeight = 50
-    if self.tabPosition == "top" then
-        return guiX, guiY + tabHeight, guiW, guiH - tabHeight
-    else
-        return guiX + 120, guiY, guiW - 120, guiH
-    end
-end
-
-function KelGUI:getComponentHeight(component)
-    if component.type == "category" then return 40
-    elseif component.type == "slider" then return 50
-    else return 35 end
-end
-
-function KelGUI:isPointInTabs(x, y, guiX, guiY, guiW, guiH)
-    if self.tabPosition == "top" then
-        return y >= guiY and y <= guiY + 50
-    else
-        return x >= guiX and x <= guiX + 120
-    end
-end
-
-function KelGUI:getTabAtPoint(x, y, guiX, guiY, guiW, guiH)
-    if self.tabPosition == "top" then
-        local tabIndex = math.floor((x - guiX) / 120) + 1
-        return tabIndex <= #self.tabs and tabIndex or nil
-    else
-        local tabIndex = math.floor((y - guiY) / 50) + 1
-        return tabIndex <= #self.tabs and tabIndex or nil
-    end
-end
-
--- Drawing helper functions (implement these based on your graphics library)
-function KelGUI:setColor(color)
-    -- Implement color setting for your graphics library
-    -- Example: love.graphics.setColor(color[1]/255, color[2]/255, color[3]/255, (color[4] or 255)/255)
-end
-
-function KelGUI:drawRect(x, y, w, h)
-    -- Implement rectangle drawing
-    -- Example: love.graphics.rectangle("fill", x, y, w, h)
-end
-
-function KelGUI:drawRoundedRect(x, y, w, h, radius, tl, tr, bl, br)
-    -- Implement rounded rectangle drawing
-    -- Parameters: tl=top-left, tr=top-right, bl=bottom-left, br=bottom-right corners
-    -- Default to all corners rounded if not specified
-end
-
-function KelGUI:drawRoundedRectOutline(x, y, w, h, radius)
-    -- Implement rounded rectangle outline
-end
-
-function KelGUI:drawRectOutline(x, y, w, h)
-    -- Implement rectangle outline
-end
-
-function KelGUI:drawText(text, x, y, align)
-    -- Implement text drawing
-    -- align can be "left", "center", "right"
-end
-
-return KelGUI
