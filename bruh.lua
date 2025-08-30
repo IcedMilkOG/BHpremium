@@ -1,556 +1,751 @@
--- Add these advanced features to your KelTec library (before "return KelTecLib")
+--[[
+  BigHookUI (bighook | kel.tec)
+  -------------------------------------------------------
+  Human-written Luau ModuleScript UI library
+  - Tabs (Top/Bottom/Left/Right)
+  - 3 columns per tab
+  - Section boxes
+  - Toggle / Slider / Dropdown / ColorPicker (rainbow + speed)
+  - Draggable floating button (mobile touch friendly)
+  - Background modes: "pixel_gradient" (low opacity) and "stars" (animated)
+  - No exploit-specific features. Safe for Roblox Studio + Mobile.
+  Author: kel.tec (bighook)
+  License: MIT
+--]]
 
--- Advanced Notification System
-local NotificationSystem = {}
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
-function KelTecLib.CreateNotification(title, message, duration, notificationType)
-    duration = duration or 3
-    notificationType = notificationType or "info" -- "info", "success", "warning", "error"
-    
-    local colors = {
-        info = Config.Colors.Accent,
-        success = Config.Colors.Success,
-        warning = Config.Colors.Warning,
-        error = Config.Colors.Error
-    }
-    
-    local icons = {
-        info = "ℹ️",
-        success = "✅", 
-        warning = "⚠️",
-        error = "❌"
-    }
-    
-    -- Create notification GUI
-    local NotifGui = Instance.new("ScreenGui")
-    NotifGui.Name = "KelTecNotification"
-    NotifGui.Parent = CoreGui
-    NotifGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    NotifGui.DisplayOrder = 200
-    
-    local NotifFrame = Instance.new("Frame")
-    NotifFrame.Name = "NotificationFrame"
-    NotifFrame.Size = UDim2.new(0, 350, 0, 80)
-    NotifFrame.Position = UDim2.new(1, 10, 0, 10)
-    NotifFrame.BackgroundColor3 = Config.Colors.Primary
-    NotifFrame.BorderSizePixel = 0
-    NotifFrame.ZIndex = 10
-    NotifFrame.Parent = NotifGui
-    CreateCorner(NotifFrame, 12)
-    CreateStroke(NotifFrame, colors[notificationType], 2)
-    CreateGlow(NotifFrame, colors[notificationType], 15)
-    
-    -- Modern gradient
-    CreateGradient(NotifFrame, ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Config.Colors.Primary),
-        ColorSequenceKeypoint.new(1, Config.Colors.Secondary)
-    }, 90)
-    
-    -- Icon
-    local NotifIcon = Instance.new("TextLabel")
-    NotifIcon.Name = "Icon"
-    NotifIcon.Size = UDim2.new(0, 40, 0, 40)
-    NotifIcon.Position = UDim2.new(0, 15, 0.5, -20)
-    NotifIcon.BackgroundTransparency = 1
-    NotifIcon.Text = icons[notificationType]
-    NotifIcon.TextColor3 = colors[notificationType]
-    NotifIcon.TextSize = 24
-    NotifIcon.Font = Config.Fonts.Bold
-    NotifIcon.ZIndex = 11
-    NotifIcon.Parent = NotifFrame
-    
-    -- Title
-    local NotifTitle = Instance.new("TextLabel")
-    NotifTitle.Name = "Title"
-    NotifTitle.Size = UDim2.new(1, -70, 0, 25)
-    NotifTitle.Position = UDim2.new(0, 60, 0, 12)
-    NotifTitle.BackgroundTransparency = 1
-    NotifTitle.Text = title
-    NotifTitle.TextColor3 = Config.Colors.Text
-    NotifTitle.TextSize = 16
-    NotifTitle.Font = Config.Fonts.Bold
-    NotifTitle.TextXAlignment = Enum.TextXAlignment.Left
-    NotifTitle.ZIndex = 11
-    NotifTitle.Parent = NotifFrame
-    
-    -- Message
-    local NotifMessage = Instance.new("TextLabel")
-    NotifMessage.Name = "Message"
-    NotifMessage.Size = UDim2.new(1, -70, 0, 25)
-    NotifMessage.Position = UDim2.new(0, 60, 0, 35)
-    NotifMessage.BackgroundTransparency = 1
-    NotifMessage.Text = message
-    NotifMessage.TextColor3 = Config.Colors.TextSecondary
-    NotifMessage.TextSize = 13
-    NotifMessage.Font = Config.Fonts.Main
-    NotifMessage.TextXAlignment = Enum.TextXAlignment.Left
-    NotifMessage.ZIndex = 11
-    NotifMessage.Parent = NotifFrame
-    
-    -- Progress bar
-    local ProgressBar = Instance.new("Frame")
-    ProgressBar.Name = "ProgressBar"
-    ProgressBar.Size = UDim2.new(1, 0, 0, 3)
-    ProgressBar.Position = UDim2.new(0, 0, 1, -3)
-    ProgressBar.BackgroundColor3 = colors[notificationType]
-    ProgressBar.BorderSizePixel = 0
-    ProgressBar.ZIndex = 11
-    ProgressBar.Parent = NotifFrame
-    
-    -- Animate entrance
-    CreateTween(NotifFrame, {Position = UDim2.new(1, -360, 0, 10)}, 0.4, Enum.EasingStyle.Back)
-    
-    -- Animate progress bar
-    CreateTween(ProgressBar, {Size = UDim2.new(0, 0, 0, 3)}, duration, Enum.EasingStyle.Linear)
-    
-    -- Auto-close
-    spawn(function()
-        wait(duration)
-        CreateTween(NotifFrame, {
-            Position = UDim2.new(1, 10, 0, 10),
-            BackgroundTransparency = 1
-        }, 0.3)
-        
-        for _, child in pairs(NotifFrame:GetChildren()) do
-            if child:IsA("GuiObject") then
-                if child:IsA("TextLabel") then
-                    CreateTween(child, {TextTransparency = 1}, 0.3)
+local LocalPlayer = Players.LocalPlayer
+
+local BigHookUI = {}
+BigHookUI.__index = BigHookUI
+
+-- Theme
+local Theme = {
+    Base       = Color3.fromRGB(7, 20, 27),
+    LightBase  = Color3.fromRGB(12, 40, 46),
+    Accent     = Color3.fromRGB(0, 198, 160),
+    AccentDim  = Color3.fromRGB(0, 150, 120),
+    Text       = Color3.fromRGB(230, 240, 245),
+    SubText    = Color3.fromRGB(170, 190, 196),
+    Section    = Color3.fromRGB(12, 30, 34),
+    SectionBorder = Color3.fromRGB(24, 60, 66),
+}
+
+-- small helpers
+local function mk(class, props, children)
+    local obj = Instance.new(class)
+    if props then for k,v in pairs(props) do obj[k] = v end end
+    if children then for _,c in ipairs(children) do c.Parent = obj end end
+    return obj
+end
+
+local function makeCorner(radius)
+    return mk("UICorner", { CornerRadius = UDim.new(0, radius) })
+end
+
+local function makeStroke(thickness, color, transparency)
+    return mk("UIStroke", { Thickness = thickness or 1, Color = color or Theme.SectionBorder, Transparency = transparency or 0 })
+end
+
+-- Pixel background generation (grid of small frames)
+local function createPixelGradientFrame(parent, sizePxX, sizePxY, opacity, paletteFn)
+    -- sizePxX, sizePxY: number of pixel columns/rows
+    -- paletteFn: function(xFrac,yFrac) -> Color3
+    local container = mk("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        AnchorPoint = Vector2.new(0, 0)
+    }, {})
+    container.ClipsDescendants = true
+    container.Parent = parent
+
+    -- create grid
+    local cellW = parent.AbsoluteSize.X / sizePxX
+    local cellH = parent.AbsoluteSize.Y / sizePxY
+
+    -- We'll create using UIListLayouts would be messy due to resizing; instead create absolute-positioned cells and update on resize
+    local cells = {}
+
+    local function rebuild()
+        -- remove existing
+        for _,c in ipairs(cells) do if c and c.Parent then c:Destroy() end end
+        cells = {}
+        local abs = parent.AbsoluteSize
+        local cw = (abs.X / sizePxX)
+        local ch = (abs.Y / sizePxY)
+        for y=0, sizePxY-1 do
+            for x=0, sizePxX-1 do
+                local xf = (x / (sizePxX-1))
+                local yf = (y / (sizePxY-1))
+                local color = paletteFn(xf, yf)
+                local cell = mk("Frame", {
+                    BackgroundColor3 = color,
+                    BorderSizePixel = 0,
+                    Size = UDim2.new(0, math.max(1, math.floor(cw+0.5)), 0, math.max(1, math.floor(ch+0.5))),
+                    Position = UDim2.new(0, math.floor(x * cw), 0, math.floor(y * ch)),
+                    BackgroundTransparency = math.clamp(1 - (opacity or 0.2), 0, 1)
+                }, {})
+                cell.Parent = container
+                cells[#cells+1] = cell
+            end
+        end
+    end
+
+    -- initial build (may be zero size until parent AbsoluteSize available)
+    if parent.AbsoluteSize.X > 0 then
+        rebuild()
+    end
+
+    -- keep in sync when resized
+    parent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function() rebuild() end)
+
+    return container, function() for _,c in ipairs(cells) do if c and c.Parent then c:Destroy() end end end
+end
+
+-- Stars background: animated small frames moving slowly (parallax)
+local function createStarsFrame(parent, numStars, speedRange, color, alpha)
+    local container = mk("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+    }, {})
+    container.Parent = parent
+
+    local stars = {}
+    local rand = Random.new(tick() % 2^31)
+
+    local function spawnStar()
+        local size = rand:NextNumber(1, 3)
+        local x = rand:NextNumber(0, parent.AbsoluteSize.X)
+        local y = rand:NextNumber(0, parent.AbsoluteSize.Y)
+        local star = mk("Frame", {
+            BackgroundColor3 = color or Color3.new(1,1,1),
+            Size = UDim2.new(0, size, 0, size),
+            Position = UDim2.new(0, x, 0, y),
+            BorderSizePixel = 0,
+            BackgroundTransparency = alpha or 0.85,
+        }, {})
+        makeCorner(1).Parent = star
+        star.Parent = container
+        return star
+    end
+
+    local function init()
+        for i=1,numStars do
+            local s = spawnStar()
+            stars[#stars+1] = {inst=s, speed=rand:NextNumber(speedRange[1], speedRange[2])}
+        end
+    end
+
+    local animConn
+    animConn = RunService.RenderStepped:Connect(function(dt)
+        if not parent or not parent.Parent then
+            animConn:Disconnect()
+            return
+        end
+        for i=#stars,1,-1 do
+            local rec = stars[i]
+            if not rec.inst or not rec.inst.Parent then
+                table.remove(stars, i)
+            else
+                local pos = rec.inst.Position
+                local newX = pos.X.Offset + dt * rec.speed
+                if newX > parent.AbsoluteSize.X then
+                    -- recycle left
+                    newX = -5
+                    rec.inst.Position = UDim2.new(0, newX, 0, math.random(0,parent.AbsoluteSize.Y))
                 else
-                    CreateTween(child, {BackgroundTransparency = 1}, 0.3)
+                    rec.inst.Position = UDim2.new(0, newX, 0, pos.Y.Offset)
                 end
             end
         end
-        
-        wait(0.4)
-        NotifGui:Destroy()
     end)
+
+    parent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+        -- respawn stars
+        for _,rec in ipairs(stars) do if rec.inst and rec.inst.Parent then rec.inst:Destroy() end end
+        stars = {}
+        init()
+    end)
+
+    init()
+    return container, function() animConn:Disconnect(); container:Destroy() end
 end
 
--- Advanced Keybind System
-function GUI:CreateKeybind(section, name, default, callback)
-    default = default or Enum.KeyCode.Unknown
-    callback = callback or function() end
-    
-    local KeybindFrame = Instance.new("Frame")
-    KeybindFrame.Name = name .. "Keybind"
-    KeybindFrame.Size = UDim2.new(1, 0, 0, 42)
-    KeybindFrame.BackgroundColor3 = Config.Colors.Background
-    KeybindFrame.BorderSizePixel = 0
-    KeybindFrame.ZIndex = 16
-    KeybindFrame.Parent = section.Content
-    CreateCorner(KeybindFrame, 10)
-    CreateStroke(KeybindFrame, Config.Colors.Border)
-    
-    CreateGradient(KeybindFrame, ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Config.Colors.Background),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 30))
-    }, 90)
-    
-    local KeybindLabel = Instance.new("TextLabel")
-    KeybindLabel.Name = "KeybindLabel"
-    KeybindLabel.Size = UDim2.new(1, -80, 1, 0)
-    KeybindLabel.Position = UDim2.new(0, 16, 0, 0)
-    KeybindLabel.BackgroundTransparency = 1
-    KeybindLabel.Text = name
-    KeybindLabel.TextColor3 = Config.Colors.Text
-    KeybindLabel.TextSize = 15
-    KeybindLabel.Font = Config.Fonts.Main
-    KeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
-    KeybindLabel.ZIndex = 17
-    KeybindLabel.Parent = KeybindFrame
-    
-    local KeybindButton = Instance.new("TextButton")
-    KeybindButton.Name = "KeybindButton"
-    KeybindButton.Size = UDim2.new(0, 60, 0, 26)
-    KeybindButton.Position = UDim2.new(1, -70, 0.5, -13)
-    KeybindButton.BackgroundColor3 = Config.Colors.Accent
-    KeybindButton.BorderSizePixel = 0
-    KeybindButton.Text = default.Name:sub(1, 8)
-    KeybindButton.TextColor3 = Config.Colors.Text
-    KeybindButton.TextSize = 12
-    KeybindButton.Font = Config.Fonts.Bold
-    KeybindButton.ZIndex = 17
-    KeybindButton.Parent = KeybindFrame
-    CreateCorner(KeybindButton, 6)
-    CreateGlow(KeybindButton, Config.Colors.Accent, 8)
-    
-    local currentKey = default
-    local listening = false
-    
-    KeybindButton.MouseButton1Click:Connect(function()
-        if listening then return end
-        
-        listening = true
-        KeybindButton.Text = "..."
-        KeybindButton.BackgroundColor3 = Config.Colors.Warning
-        
-        local connection
-        connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-            if gameProcessed then return end
-            
-            currentKey = input.KeyCode
-            KeybindButton.Text = currentKey.Name:sub(1, 8)
-            KeybindButton.BackgroundColor3 = Config.Colors.Accent
-            listening = false
-            connection:Disconnect()
-        end)
-    end)
-    
-    -- Listen for keybind activation
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed or listening then return end
-        if input.KeyCode == currentKey then
-            callback(currentKey)
-        end
-    end)
-    
-    return {
-        Frame = KeybindFrame,
-        SetKey = function(key)
-            currentKey = key
-            KeybindButton.Text = key.Name:sub(1, 8)
-        end,
-        GetKey = function()
-            return currentKey
-        end
-    }
-end
+-- Core constructor
+function BigHookUI.new(opts)
+    opts = opts or {}
+    local self = setmetatable({}, BigHookUI)
+    self._tabs = {}
+    self._rainbowConnections = {}
+    self._backgroundCleanup = nil
 
--- Advanced TextBox
-function GUI:CreateTextBox(section, name, placeholder, callback)
-    placeholder = placeholder or "Enter text..."
-    callback = callback or function() end
-    
-    local TextBoxFrame = Instance.new("Frame")
-    TextBoxFrame.Name = name .. "TextBox"
-    TextBoxFrame.Size = UDim2.new(1, 0, 0, 42)
-    TextBoxFrame.BackgroundColor3 = Config.Colors.Background
-    TextBoxFrame.BorderSizePixel = 0
-    TextBoxFrame.ZIndex = 16
-    TextBoxFrame.Parent = section.Content
-    CreateCorner(TextBoxFrame, 10)
-    CreateStroke(TextBoxFrame, Config.Colors.Border)
-    
-    CreateGradient(TextBoxFrame, ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Config.Colors.Background),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 30))
-    }, 90)
-    
-    local TextBoxLabel = Instance.new("TextLabel")
-    TextBoxLabel.Name = "TextBoxLabel"
-    TextBoxLabel.Size = UDim2.new(0.4, 0, 1, 0)
-    TextBoxLabel.Position = UDim2.new(0, 16, 0, 0)
-    TextBoxLabel.BackgroundTransparency = 1
-    TextBoxLabel.Text = name
-    TextBoxLabel.TextColor3 = Config.Colors.Text
-    TextBoxLabel.TextSize = 15
-    TextBoxLabel.Font = Config.Fonts.Main
-    TextBoxLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TextBoxLabel.ZIndex = 17
-    TextBoxLabel.Parent = TextBoxFrame
-    
-    local TextBox = Instance.new("TextBox")
-    TextBox.Name = "TextBox"
-    TextBox.Size = UDim2.new(0.55, -16, 0, 26)
-    TextBox.Position = UDim2.new(0.45, 0, 0.5, -13)
-    TextBox.BackgroundColor3 = Config.Colors.Secondary
-    TextBox.BorderSizePixel = 0
-    TextBox.Text = ""
-    TextBox.PlaceholderText = placeholder
-    TextBox.TextColor3 = Config.Colors.Text
-    TextBox.PlaceholderColor3 = Config.Colors.TextMuted
-    TextBox.TextSize = 13
-    TextBox.Font = Config.Fonts.Main
-    TextBox.ZIndex = 17
-    TextBox.Parent = TextBoxFrame
-    CreateCorner(TextBox, 6)
-    
-    local TextBoxPadding = Instance.new("UIPadding")
-    TextBoxPadding.PaddingLeft = UDim.new(0, 8)
-    TextBoxPadding.PaddingRight = UDim.new(0, 8)
-    TextBoxPadding.Parent = TextBox
-    
-    -- Focus effects
-    TextBox.Focused:Connect(function()
-        CreateStroke(TextBoxFrame, Config.Colors.Accent, 2)
-        CreateGlow(TextBoxFrame, Config.Colors.Accent, 8)
+    local title = opts.title or "bighook | kel.tec"
+    local tabPlacement = string.lower(opts.tabPlacement or "top") -- top/bottom/left/right
+
+    -- ScreenGui
+    local gui = mk("ScreenGui", { Name = "BigHookUI", ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, IgnoreGuiInset = true }, {})
+    gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    self.Gui = gui
+
+    -- Root window
+    local root = mk("Frame", {
+        Name = "Window",
+        Size = UDim2.new(0, 900, 0, 520),
+        Position = UDim2.new(0.5, -450, 0.5, -260),
+        BackgroundColor3 = Theme.Base,
+        BorderSizePixel = 0,
+    }, {})
+    root.Parent = gui
+    makeCorner(8).Parent = root
+    makeStroke(1, Theme.SectionBorder, 0.2).Parent = root
+
+    -- Title bar
+    local titleBar = mk("Frame", { Size = UDim2.new(1,0,0,40), BackgroundColor3 = Theme.LightBase, BorderSizePixel = 0 }, {})
+    titleBar.Parent = root
+    makeCorner(8).Parent = titleBar
+    makeStroke(1, Theme.SectionBorder, 0.15).Parent = titleBar
+
+    local titleLbl = mk("TextLabel", {
+        Text = title,
+        BackgroundTransparency = 1,
+        TextColor3 = Theme.Text,
+        Font = Enum.Font.GothamBold,
+        TextSize = 16,
+        Size = UDim2.new(1,-140,1,0),
+        Position = UDim2.new(0,12,0,0),
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, {})
+    titleLbl.Parent = titleBar
+
+    -- container for rail & content
+    local rail = mk("Frame", { BackgroundTransparency = 1, BorderSizePixel = 0 }, {})
+    local content = mk("Frame", { BackgroundTransparency = 1, BorderSizePixel = 0 }, {})
+    rail.Parent = root; content.Parent = root
+
+    -- configure placement
+    local railSize = 48
+    if tabPlacement == "top" then
+        rail.Size = UDim2.new(1, -24, 0, railSize)
+        rail.Position = UDim2.new(0, 12, 0, 40)
+        content.Position = UDim2.new(0, 12, 0, 40 + railSize + 12)
+        content.Size = UDim2.new(1, -24, 1, -(40 + railSize + 24))
+    elseif tabPlacement == "bottom" then
+        content.Position = UDim2.new(0, 12, 0, 40)
+        content.Size = UDim2.new(1, -24, 1, -(40 + railSize + 24))
+        rail.Size = UDim2.new(1, -24, 0, railSize)
+        rail.Position = UDim2.new(0, 12, 1, -railSize - 12)
+    elseif tabPlacement == "left" then
+        rail.Size = UDim2.new(0, 140, 1, -(40 + 24))
+        rail.Position = UDim2.new(0, 12, 0, 40 + 12)
+        content.Position = UDim2.new(0, 12 + 140 + 12, 0, 40 + 12)
+        content.Size = UDim2.new(1, -(12 + 140 + 24), 1, -(40 + 24))
+    else -- right
+        rail.Size = UDim2.new(0, 140, 1, -(40 + 24))
+        rail.Position = UDim2.new(1, -140 - 12, 0, 40 + 12)
+        content.Position = UDim2.new(0, 12, 0, 40 + 12)
+        content.Size = UDim2.new(1, -(12 + 140 + 24), 1, -(40 + 24))
+    end
+
+    -- rail layout
+    local railLayout = mk("UIListLayout", { FillDirection = (tabPlacement=="left" or tabPlacement=="right") and Enum.FillDirection.Vertical or Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8) }, {})
+    railLayout.Parent = rail
+
+    -- floating toggle button (draggable)
+    local floater = mk("TextButton", {
+        Name = "Floater",
+        Text = "≡",
+        Font = Enum.Font.GothamBlack,
+        TextSize = 18,
+        Size = UDim2.new(0, 46, 0, 46),
+        Position = UDim2.new(0, 12, 0, 12),
+        BackgroundColor3 = Theme.Accent,
+        TextColor3 = Theme.Text,
+        BorderSizePixel = 0,
+        AutoButtonColor = false
+    }, {})
+    floater.Parent = gui
+    makeCorner(24).Parent = floater
+    makeStroke(1, Theme.SectionBorder, 0.2).Parent = floater
+
+    local dragging, dragStart, startPos
+    floater.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; dragStart = input.Position; startPos = floater.Position
+        end
     end)
-    
-    TextBox.FocusLost:Connect(function()
-        CreateStroke(TextBoxFrame, Config.Colors.Border, 1)
-        local glow = TextBoxFrame.Parent:FindFirstChild("Glow")
-        if glow then glow:Destroy() end
-        callback(TextBox.Text)
+    floater.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
     end)
-    
-    return {
-        Frame = TextBoxFrame,
-        SetText = function(text)
-            TextBox.Text = text
-        end,
-        GetText = function()
-            return TextBox.Text
+    UserInputService.InputChanged:Connect(function(input)
+        if not dragging then return end
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            local delta = input.Position - dragStart
+            floater.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
-    }
-end
+    end)
+    floater.MouseButton1Click:Connect(function()
+        root.Visible = not root.Visible
+    end)
 
--- Advanced Config System
-function GUI:CreateConfigSystem()
-    local ConfigSystem = {
-        Settings = {},
-        FileName = "KelTecConfig.json"
-    }
-    
-    function ConfigSystem:Save()
-        local success, result = pcall(function()
-            local data = game:GetService("HttpService"):JSONEncode(self.Settings)
-            writefile(self.FileName, data)
-            return true
-        end)
-        
-        if success then
-            KelTecLib.CreateNotification("Config Saved", "Configuration saved successfully!", 2, "success")
-        else
-            KelTecLib.CreateNotification("Save Failed", "Failed to save configuration", 3, "error")
-        end
-        
-        return success
-    end
-    
-    function ConfigSystem:Load()
-        local success, result = pcall(function()
-            if isfile(self.FileName) then
-                local data = readfile(self.FileName)
-                self.Settings = game:GetService("HttpService"):JSONDecode(data)
-                return true
-            end
-            return false
-        end)
-        
-        if success and result then
-            KelTecLib.CreateNotification("Config Loaded", "Configuration loaded successfully!", 2, "success")
-        else
-            KelTecLib.CreateNotification("Load Failed", "No config file found or failed to load", 3, "warning")
-        end
-        
-        return success and result
-    end
-    
-    function ConfigSystem:Set(key, value)
-        self.Settings[key] = value
-    end
-    
-    function ConfigSystem:Get(key, default)
-        return self.Settings[key] or default
-    end
-    
-    return ConfigSystem
-end
-
--- Performance Monitor
-local PerformanceMonitor = {
-    FPS = 0,
-    Ping = 0,
-    MemoryUsage = 0
-}
-
-function PerformanceMonitor:Start()
-    spawn(function()
-        local lastTime = tick()
-        local frameCount = 0
-        
-        RunService.Heartbeat:Connect(function()
-            frameCount = frameCount + 1
-            local currentTime = tick()
-            
-            if currentTime - lastTime >= 1 then
-                self.FPS = frameCount
-                frameCount = 0
-                lastTime = currentTime
-                
-                -- Get ping
-                local stats = game:GetService("Stats")
-                local ping = stats.Network.ServerStatsItem["Data Ping"]:GetValueString()
-                self.Ping = tonumber(ping:match("(%d+)")) or 0
-                
-                -- Memory usage (approximate)
-                self.MemoryUsage = math.floor(stats:GetTotalMemoryUsageMb())
+    -- drag window by title bar (touch-friendly)
+    do
+        local winDrag, ws, startP
+        titleBar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                winDrag = true
+                ws = input.Position
+                startP = root.Position
             end
         end)
-    end)
-end
-
--- Advanced Theme System
-local ThemeManager = {
-    Themes = {
-        ["Dark Modern"] = {
-            Primary = Color3.fromRGB(15, 15, 23),
-            Secondary = Color3.fromRGB(25, 25, 35),
-            Accent = Color3.fromRGB(88, 101, 242),
-            Background = Color3.fromRGB(10, 10, 15)
-        },
-        ["Purple Dream"] = {
-            Primary = Color3.fromRGB(20, 15, 25),
-            Secondary = Color3.fromRGB(30, 25, 40),
-            Accent = Color3.fromRGB(138, 43, 226),
-            Background = Color3.fromRGB(15, 10, 20)
-        },
-        ["Ocean Blue"] = {
-            Primary = Color3.fromRGB(15, 20, 30),
-            Secondary = Color3.fromRGB(25, 35, 45),
-            Accent = Color3.fromRGB(0, 150, 255),
-            Background = Color3.fromRGB(10, 15, 25)
-        },
-        ["Forest Green"] = {
-            Primary = Color3.fromRGB(15, 25, 15),
-            Secondary = Color3.fromRGB(25, 40, 25),
-            Accent = Color3.fromRGB(67, 181, 129),
-            Background = Color3.fromRGB(10, 20, 10)
-        },
-        ["Blood Red"] = {
-            Primary = Color3.fromRGB(25, 15, 15),
-            Secondary = Color3.fromRGB(40, 25, 25),
-            Accent = Color3.fromRGB(237, 66, 69),
-            Background = Color3.fromRGB(20, 10, 10)
-        }
-    }
-}
-
-function ThemeManager:ApplyTheme(themeName, gui)
-    local theme = self.Themes[themeName]
-    if not theme then return false end
-    
-    -- Update config colors
-    for key, value in pairs(theme) do
-        Config.Colors[key] = value
+        titleBar.InputEnded:Connect(function(input)
+            winDrag = false
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if not winDrag then return end
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                local d = input.Position - ws
+                root.Position = UDim2.new(startP.X.Scale, startP.X.Offset + d.X, startP.Y.Scale, startP.Y.Offset + d.Y)
+            end
+        end)
     end
-    
-    -- Apply to existing elements (would need to iterate through GUI elements)
-    KelTecLib.CreateNotification("Theme Applied", "Theme '" .. themeName .. "' applied successfully!", 2, "success")
-    return true
+
+    -- store
+    self.Gui = gui
+    self.Root = root
+    self.Rail = rail
+    self.Content = content
+    self.TitleLabel = titleLbl
+    self.Floater = floater
+    self.TabPlacement = tabPlacement
+
+    return self
 end
 
--- Watermark System
-function GUI:CreateWatermark()
-    local WatermarkGui = Instance.new("ScreenGui")
-    WatermarkGui.Name = "KelTecWatermark"
-    WatermarkGui.Parent = CoreGui
-    WatermarkGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    WatermarkGui.DisplayOrder = 150
-    
-    local WatermarkFrame = Instance.new("Frame")
-    WatermarkFrame.Name = "WatermarkFrame"
-    WatermarkFrame.Size = UDim2.new(0, 200, 0, 60)
-    WatermarkFrame.Position = UDim2.new(0, 10, 0, 10)
-    WatermarkFrame.BackgroundColor3 = Config.Colors.Primary
-    WatermarkFrame.BorderSizePixel = 0
-    WatermarkFrame.ZIndex = 10
-    WatermarkFrame.Parent = WatermarkGui
-    CreateCorner(WatermarkFrame, 10)
-    CreateStroke(WatermarkFrame, Config.Colors.Border)
-    
-    CreateGradient(WatermarkFrame, ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Config.Colors.Primary),
-        ColorSequenceKeypoint.new(1, Config.Colors.Secondary)
-    }, 90)
-    
-    local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, -20, 0, 20)
-    Title.Position = UDim2.new(0, 10, 0, 8)
-    Title.BackgroundTransparency = 1
-    Title.Text = "KelTec • Premium"
-    Title.TextColor3 = Config.Colors.Text
-    Title.TextSize = 14
-    Title.Font = Config.Fonts.Bold
-    Title.ZIndex = 11
-    Title.Parent = WatermarkFrame
-    
-    local InfoLabel = Instance.new("TextLabel")
-    InfoLabel.Size = UDim2.new(1, -20, 0, 15)
-    InfoLabel.Position = UDim2.new(0, 10, 0, 28)
-    InfoLabel.BackgroundTransparency = 1
-    InfoLabel.Text = "FPS: 0 | Ping: 0ms"
-    InfoLabel.TextColor3 = Config.Colors.TextSecondary
-    InfoLabel.TextSize = 11
-    InfoLabel.Font = Config.Fonts.Main
-    InfoLabel.ZIndex = 11
-    InfoLabel.Parent = WatermarkFrame
-    
-    local TimeLabel = Instance.new("TextLabel")
-    TimeLabel.Size = UDim2.new(1, -20, 0, 15)
-    TimeLabel.Position = UDim2.new(0, 10, 0, 43)
-    TimeLabel.BackgroundTransparency = 1
-    TimeLabel.Text = os.date("%H:%M:%S")
-    TimeLabel.TextColor3 = Config.Colors.TextMuted
-    TimeLabel.TextSize = 10
-    TimeLabel.Font = Config.Fonts.Main
-    TimeLabel.ZIndex = 11
-    TimeLabel.Parent = WatermarkFrame
-    
-    -- Update watermark info
-    spawn(function()
-        while WatermarkGui.Parent do
-            InfoLabel.Text = string.format("FPS: %d | Ping: %dms", PerformanceMonitor.FPS, PerformanceMonitor.Ping)
-            TimeLabel.Text = os.date("%H:%M:%S")
-            wait(1)
-        end
-    end)
-    
-    return WatermarkGui
-end
+-- Create a tab with 3 columns
+function BigHookUI:CreateTab(name)
+    name = tostring(name or "Tab")
+    local btn = mk("TextButton", {
+        Text = name,
+        BackgroundColor3 = Theme.LightBase,
+        TextColor3 = Theme.Text,
+        Font = Enum.Font.GothamSemibold,
+        TextSize = 14,
+        BorderSizePixel = 0,
+        Size = (self.TabPlacement == "top" or self.TabPlacement == "bottom") and UDim2.new(0,160,1,0) or UDim2.new(1,0,0,40),
+        AutoButtonColor = false
+    }, {})
+    btn.Parent = self.Rail
+    makeCorner(6).Parent = btn
+    makeStroke(1, Theme.SectionBorder, 0.12).Parent = btn
 
--- Initialize performance monitor
-PerformanceMonitor:Start()
+    local page = mk("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Visible = false }, {})
+    page.Parent = self.Content
 
--- Console Commands System
-local ConsoleCommands = {}
+    -- create three columns
+    local columns = {}
+    for i=1,3 do
+        local col = mk("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1/3, -10, 1, 0),
+        }, {})
+        col.Parent = page
+        if i > 1 then col.Position = UDim2.new((i-1)/3 + 0.01, 0, 0, 0) end
 
-function ConsoleCommands:RegisterCommand(name, description, callback)
-    self[name] = {
-        description = description,
-        callback = callback
-    }
-end
-
-function ConsoleCommands:ExecuteCommand(command)
-    local parts = command:split(" ")
-    local commandName = parts[1]:lower()
-    
-    if self[commandName] then
-        local args = {}
-        for i = 2, #parts do
-            table.insert(args, parts[i])
-        end
-        self[commandName].callback(unpack(args))
-        return true
+        local layout = mk("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }, {})
+        layout.Parent = col
+        columns[i] = col
     end
-    return false
-end
 
--- Register default commands
-ConsoleCommands:RegisterCommand("help", "Show all available commands", function()
-    print("=== KelTec Console Commands ===")
-    for name, cmd in pairs(ConsoleCommands) do
-        if type(cmd) == "table" and cmd.description then
-            print(name .. " - " .. cmd.description)
+    local tab = { Button = btn, Page = page, Columns = columns, Sections = {} }
+    table.insert(self._tabs, tab)
+
+    local function select()
+        for _,t in ipairs(self._tabs) do
+            t.Page.Visible = (t == tab)
+            t.Button.BackgroundColor3 = (t == tab) and Theme.AccentDim or Theme.LightBase
         end
     end
-end)
+    btn.MouseButton1Click:Connect(select)
+    if #self._tabs == 1 then select() end
 
-ConsoleCommands:RegisterCommand("theme", "Change GUI theme", function(themeName)
-    if themeName then
-        ThemeManager:ApplyTheme(themeName)
+    -- Section helper
+    function tab:AddSection(title, column)
+        local colIndex = math.clamp(tonumber(column) or 1, 1, 3)
+        local parent = columns[colIndex]
+
+        local section = mk("Frame", {
+            BackgroundColor3 = Theme.Section,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y
+        }, {})
+        section.Parent = parent
+        makeCorner(8).Parent = section
+        makeStroke(1, Theme.SectionBorder, 0.24).Parent = section
+
+        local header = mk("TextLabel", {
+            Text = tostring(title or "section"),
+            BackgroundTransparency = 1,
+            TextColor3 = Theme.SubText,
+            Font = Enum.Font.GothamBold,
+            TextSize = 14,
+            Size = UDim2.new(1, -12, 0, 24),
+            Position = UDim2.new(0, 8, 0, 6),
+            TextXAlignment = Enum.TextXAlignment.Left
+        }, {})
+        header.Parent = section
+
+        local padding = mk("UIPadding", { PaddingTop = UDim.new(0, 32), PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), PaddingBottom = UDim.new(0, 8) }, {})
+        padding.Parent = section
+
+        local list = mk("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, Padding = UDim.new(0, 6) }, {})
+        list.Parent = section
+
+        local s = { _parent = section }
+
+        -- Toggle widget
+        function s:Toggle(opts)
+            opts = opts or {}
+            local state = opts.default and true or false
+
+            local row = mk("Frame", { Size = UDim2.new(1,0,0,28), BackgroundTransparency = 1 }, {})
+            row.Parent = section
+
+            local label = mk("TextLabel", {
+                Text = tostring(opts.text or "toggle"),
+                BackgroundTransparency = 1,
+                TextColor3 = Theme.Text,
+                Font = Enum.Font.Gotham,
+                TextSize = 14,
+                Size = UDim2.new(1, -36, 1, 0),
+                TextXAlignment = Enum.TextXAlignment.Left
+            }, {})
+            label.Parent = row
+
+            local btn = mk("TextButton", {
+                Size = UDim2.new(0, 26, 0, 20),
+                Position = UDim2.new(1, -30, 0.5, -10),
+                BackgroundColor3 = state and Theme.Accent or Theme.LightBase,
+                BorderSizePixel = 0,
+                AutoButtonColor = false,
+                Text = ""
+            }, {})
+            makeCorner(6).Parent = btn
+            makeStroke(1, Theme.SectionBorder, 0.15).Parent = btn
+            btn.Parent = row
+
+            local function set(v)
+                state = not not v
+                btn.BackgroundColor3 = state and Theme.Accent or Theme.LightBase
+                if opts.callback then task.spawn(opts.callback, state) end
+            end
+
+            btn.MouseButton1Click:Connect(function() set(not state) end)
+            -- touch whole row
+            row.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch then set(not state) end end)
+
+            set(state)
+            return { Set = set, Get = function() return state end }
+        end
+
+        -- Slider widget
+        function s:Slider(opts)
+            opts = opts or {}
+            local min = tonumber(opts.min) or 0
+            local max = tonumber(opts.max) or 100
+            local step = opts.step or 1
+            local val = math.clamp(tonumber(opts.default) or min, min, max)
+
+            local row = mk("Frame", { Size = UDim2.new(1, 0, 0, 46), BackgroundTransparency = 1 }, {})
+            row.Parent = section
+
+            local label = mk("TextLabel", {
+                Text = tostring(opts.text or "slider") .. " - " .. tostring(val),
+                BackgroundTransparency = 1, TextColor3 = Theme.Text,
+                Font = Enum.Font.Gotham, TextSize = 14, Size = UDim2.new(1,0,0,18),
+                TextXAlignment = Enum.TextXAlignment.Left
+            }, {})
+            label.Parent = row
+
+            local bar = mk("Frame", {
+                Size = UDim2.new(1,0,0,18),
+                Position = UDim2.new(0,0,0,22),
+                BackgroundColor3 = Theme.LightBase,
+                BorderSizePixel = 0
+            }, {})
+            makeCorner(6).Parent = bar
+            makeStroke(1, Theme.SectionBorder, 0.12).Parent = bar
+            bar.Parent = row
+
+            local fill = mk("Frame", { Size = UDim2.new((val-min)/(max-min),0,1,0), BackgroundColor3 = Theme.Accent, BorderSizePixel = 0 }, {})
+            makeCorner(6).Parent = fill
+            fill.Parent = bar
+
+            local dragging = false
+            local function set(v)
+                v = math.floor(((v - min) / (max - min)) * ((max - min) / step) + 0.5) * step + min
+                v = math.clamp(v, min, max)
+                val = v
+                label.Text = tostring(opts.text or "slider") .. " - " .. tostring(val)
+                fill.Size = UDim2.new((val - min) / (max - min), 0, 1, 0)
+                if opts.callback then task.spawn(opts.callback, val) end
+            end
+
+            local function fromX(x)
+                local ap = bar.AbsolutePosition.X
+                local aw = bar.AbsoluteSize.X
+                local ratio = math.clamp((x - ap) / aw, 0, 1)
+                set(min + ratio * (max - min))
+            end
+
+            bar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                    fromX(input.Position.X)
+                end
+            end)
+            bar.InputEnded:Connect(function()
+                dragging = false
+            end)
+            UserInputService.InputChanged:Connect(function(input)
+                if not dragging then return end
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                    fromX(input.Position.X)
+                end
+            end)
+
+            set(val)
+            return { Set = set, Get = function() return val end }
+        end
+
+        -- Dropdown widget
+        function s:Dropdown(opts)
+            opts = opts or {}
+            local values = opts.values or {}
+            local current = opts.default or values[1] or ""
+
+            local row = mk("Frame", { Size = UDim2.new(1,0,0,34), BackgroundTransparency = 1 }, {})
+            row.Parent = section
+
+            local btn = mk("TextButton", {
+                Text = (opts.text or "select") .. " - " .. tostring(current),
+                BackgroundColor3 = Theme.LightBase, BorderSizePixel = 0,
+                TextColor3 = Theme.Text, Font = Enum.Font.Gotham, TextSize = 14, AutoButtonColor = false
+            }, {})
+            makeCorner(6).Parent = btn
+            btn.Parent = row
+
+            local list = mk("Frame", { Visible = false, BackgroundColor3 = Theme.Section, BorderSizePixel = 0, Size = UDim2.new(1,0,0,0) }, {})
+            makeCorner(6).Parent = list
+            list.Parent = row
+
+            local vlist = mk("UIListLayout", { Padding = UDim.new(0,2) }, {})
+            vlist.Parent = list
+
+            local function refreshList()
+                for i,child in ipairs(list:GetChildren()) do
+                    if child:IsA("TextButton") then child:Destroy() end
+                end
+                local tot = #values
+                list.Size = UDim2.new(1, 0, 0, math.min(6, tot) * 26 + 8)
+                for _,v in ipairs(values) do
+                    local item = mk("TextButton", {
+                        Text = tostring(v), BackgroundColor3 = Theme.LightBase, BorderSizePixel = 0,
+                        TextColor3 = Theme.Text, Font = Enum.Font.Gotham, TextSize = 14, AutoButtonColor = false, Size = UDim2.new(1,0,0,26)
+                    }, {})
+                    makeCorner(6).Parent = item
+                    item.Parent = list
+                    item.MouseButton1Click:Connect(function()
+                        current = v
+                        btn.Text = (opts.text or "select") .. " - " .. tostring(current)
+                        list.Visible = false
+                        if opts.callback then task.spawn(opts.callback, current) end
+                    end)
+                end
+            end
+
+            btn.MouseButton1Click:Connect(function() list.Visible = not list.Visible end)
+            row.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch then list.Visible = not list.Visible end end)
+
+            refreshList()
+            return { Set = function(v) current = v; btn.Text = (opts.text or "select") .. " - " .. tostring(current) end, Get = function() return current end }
+        end
+
+        -- Color picker with rainbow option
+        function s:ColorPicker(opts)
+            opts = opts or {}
+            local current = opts.default or Color3.fromRGB(0, 198, 160)
+            local rainbow = opts.rainbow or false
+            local speed = opts.speed or 8
+            local hue = 0
+            local conn
+
+            local row = mk("Frame", { Size = UDim2.new(1,0,0,64), BackgroundTransparency = 1 }, {})
+            row.Parent = section
+
+            local label = mk("TextLabel", { Text = tostring(opts.text or "color"), BackgroundTransparency = 1, TextColor3 = Theme.Text, Font = Enum.Font.Gotham, TextSize = 14, Size = UDim2.new(1,0,0,18), TextXAlignment = Enum.TextXAlignment.Left }, {})
+            label.Parent = row
+
+            local swatch = mk("TextButton", { Size = UDim2.new(0,44,0,28), Position = UDim2.new(0,0,0,26), BackgroundColor3 = current, BorderSizePixel = 0, AutoButtonColor = false }, {})
+            makeCorner(8).Parent = swatch
+            swatch.Parent = row
+
+            local rainbowBtn = mk("TextButton", { Text = "rainbow", Size = UDim2.new(0,70,0,28), Position = UDim2.new(0,52,0,26), BackgroundColor3 = rainbow and Theme.Accent or Theme.LightBase, BorderSizePixel = 0, AutoButtonColor = false, Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Theme.Text }, {})
+            makeCorner(6).Parent = rainbowBtn
+            rainbowBtn.Parent = row
+
+            local speedBar = mk("Frame", { Size = UDim2.new(1, -136, 0, 28), Position = UDim2.new(0, 136, 0, 26), BackgroundColor3 = Theme.LightBase, BorderSizePixel = 0 }, {})
+            makeCorner(6).Parent = speedBar
+            speedBar.Parent = row
+            local speedFill = mk("Frame", { Size = UDim2.new(math.clamp(speed/50,0,1),0,1,0), BackgroundColor3 = Theme.Accent, BorderSizePixel = 0 }, {})
+            makeCorner(6).Parent = speedFill
+            speedFill.Parent = speedBar
+
+            local function setColor(c)
+                current = c
+                swatch.BackgroundColor3 = current
+                if opts.callback then task.spawn(opts.callback, current) end
+            end
+
+            local function stopRainbow()
+                if conn then conn:Disconnect(); conn = nil end
+            end
+
+            local function startRainbow()
+                stopRainbow()
+                conn = RunService.RenderStepped:Connect(function(dt)
+                    hue = (hue + dt * (speed * 0.06)) % 1
+                    setColor(Color3.fromHSV(hue, 1, 1))
+                end)
+                table.insert(self._rainbowConnections, conn)
+            end
+
+            rainbowBtn.MouseButton1Click:Connect(function()
+                rainbow = not rainbow
+                rainbowBtn.BackgroundColor3 = rainbow and Theme.Accent or Theme.LightBase
+                if rainbow then startRainbow() else stopRainbow() end
+            end)
+
+            -- speed bar input
+            local dragging = false
+            speedBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                    local x = input.Position.X
+                    local ap = speedBar.AbsolutePosition.X
+                    local aw = speedBar.AbsoluteSize.X
+                    local ratio = math.clamp((x - ap)/aw, 0, 1)
+                    speed = math.clamp(math.floor(ratio * 50), 1, 50)
+                    speedFill.Size = UDim2.new(speed/50, 0, 1, 0)
+                end
+            end)
+            UserInputService.InputChanged:Connect(function(input)
+                if not dragging then return end
+                if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local x = input.Position.X
+                    local ap = speedBar.AbsolutePosition.X
+                    local aw = speedBar.AbsoluteSize.X
+                    local ratio = math.clamp((x - ap)/aw, 0, 1)
+                    speed = math.clamp(math.floor(ratio * 50), 1, 50)
+                    speedFill.Size = UDim2.new(speed/50, 0, 1, 0)
+                end
+            end)
+            UserInputService.InputEnded:Connect(function(input)
+                dragging = false
+            end)
+
+            -- clicking swatch opens Roblox's ColorPicker (if desired) or we can implement a simple HSV palette
+            swatch.MouseButton1Click:Connect(function()
+                -- Basic quick palette: cycle a few presets for convenience (keeps code simple)
+                local presets = {
+                    Color3.fromRGB(0,198,160),
+                    Color3.fromRGB(255,100,100),
+                    Color3.fromRGB(80,160,255),
+                    Color3.fromRGB(255,210,80),
+                    Color3.fromRGB(200,120,255)
+                }
+                local idx = 1
+                for i,v in ipairs(presets) do if v == current then idx = i; break end end
+                local nextc = presets[(idx % #presets) + 1]
+                setColor(nextc)
+            end)
+
+            if rainbow then startRainbow() end
+            return {
+                SetColor = setColor,
+                GetColor = function() return current end,
+                SetRainbow = function(b) if b then startRainbow() else stopRainbow() end end,
+                GetRainbow = function() return rainbow end,
+                SetSpeed = function(v) speed = v; speedFill.Size = UDim2.new(speed/50,0,1,0) end,
+                GetSpeed = function() return speed end
+            }
+        end
+
+        -- return section object
+        tab.Sections[#tab.Sections+1] = s
+        return s
+    end
+
+    return tab
+end
+
+-- Background customization API
+-- mode: "none" | "pixel_gradient" | "stars"
+-- opts depends on mode
+function BigHookUI:SetBackgroundMode(mode, opts)
+    opts = opts or {}
+    -- cleanup previous
+    if self._backgroundCleanup then
+        pcall(self._backgroundCleanup)
+        self._backgroundCleanup = nil
+    end
+
+    local bgParent = self.Root
+    if mode == "pixel_gradient" then
+        local cols = opts.columns or 36
+        local rows = opts.rows or 18
+        local opacity = opts.opacity or 0.14
+        -- palette function: take two given colors and blend
+        local a = opts.colorA or Color3.fromRGB(20,30,60)
+        local b = opts.colorB or Color3.fromRGB(10,140,200)
+        local function palette(xf, yf)
+            -- simple bilinear blend
+            local t = (xf + (1 - yf)) / 2
+            return Color3.new(a.R * (1-t) + b.R * t, a.G * (1-t) + b.G * t, a.B * (1-t) + b.B * t)
+        end
+        local container, cleanup = createPixelGradientFrame(bgParent, cols, rows, opacity, palette)
+        self._backgroundCleanup = cleanup
+        container.ZIndex = 0
+    elseif mode == "stars" then
+        local count = opts.count or 60
+        local speedRange = opts.speedRange or {10, 40}
+        local color = opts.color or Color3.new(1,1,1)
+        local alpha = opts.alpha or 0.9
+        local container, cleanup = createStarsFrame(bgParent, count, speedRange, color, alpha)
+        self._backgroundCleanup = cleanup
+        container.ZIndex = 0
     else
-        print("Available themes: " .. table.concat(table.keys(ThemeManager.Themes), ", "))
+        -- none (transparent)
     end
-end)
+end
 
-ConsoleCommands:RegisterCommand("fps", "Show current FPS", function()
-    print("Current FPS: " .. PerformanceMonitor.FPS)
-end)
+-- Allow changing the floating button text (e.g., icon)
+function BigHookUI:SetFloatingText(txt)
+    if not self.Floater then return end
+    self.Floater.Text = tostring(txt or self.Floater.Text)
+end
 
--- Export advanced systems
-KelTecLib.NotificationSystem = NotificationSystem
-KelTecLib.PerformanceMonitor = PerformanceMonitor
-KelTecLib.ThemeManager = ThemeManager
-KelTecLib.ConsoleCommands = ConsoleCommands
+-- Clean up
+function BigHookUI:Destroy()
+    for _,c in ipairs(self._rainbowConnections) do pcall(function() c:Disconnect() end) end
+    if self._backgroundCleanup then pcall(self._backgroundCleanup) end
+    if self.Gui and self.Gui.Parent then self.Gui:Destroy() end
+end
+
+return BigHookUI
