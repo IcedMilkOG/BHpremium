@@ -142,13 +142,13 @@ function library.new(name)
         KeyLabel.Name = "KeyLabel"
         KeyLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         KeyLabel.BackgroundTransparency = 1
-        KeyLabel.Position = UDim2.new(0.5, -100, 0.2, 0) -- Centered horizontally
+        KeyLabel.Position = UDim2.new(0.5, -100, 0.2, 0)
         KeyLabel.Size = UDim2.new(0, 200, 0, 36)
         KeyLabel.Font = TextFont
-        KeyLabel.Text = "Keltec" -- Removed \t and extra newlines
+        KeyLabel.Text = "Keltec"
         KeyLabel.TextColor3 = TextColor
         KeyLabel.TextSize = 25
-        KeyLabel.TextXAlignment = Enum.TextXAlignment.Center -- Center the text
+        KeyLabel.TextXAlignment = Enum.TextXAlignment.Center
         KeyLabel.RichText = true
         KeyLabel.Parent = MainFrame
         patches.FixTextSize(KeyLabel, 20)
@@ -624,11 +624,14 @@ function library.new(name)
                 LeftSideFrame.Size = UDim2.new(0, 148, 0, 220)
                 LeftSideFrame.Parent = SectionFrame
 
-                local LeftSideFrame_Container = Instance.new("Frame")
+                local LeftSideFrame_Container = Instance.new("ScrollingFrame") -- Changed to ScrollingFrame
                 LeftSideFrame_Container.Name = "LeftSideFrame_Container"
                 LeftSideFrame_Container.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                 LeftSideFrame_Container.BackgroundTransparency = 1
                 LeftSideFrame_Container.Size = UDim2.new(0, 148, 0, 220)
+                LeftSideFrame_Container.CanvasSize = UDim2.new(0, 0, 0, 0) -- Auto-adjusted by UIListLayout
+                LeftSideFrame_Container.ScrollBarThickness = 4
+                LeftSideFrame_Container.ScrollBarImageColor3 = FrameBorderColor
                 LeftSideFrame_Container.Parent = LeftSideFrame
 
                 local LeftContainer_UIListLayout = Instance.new("UIListLayout")
@@ -636,6 +639,11 @@ function library.new(name)
                 LeftContainer_UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
                 LeftContainer_UIListLayout.Padding = UDim.new(0, 5)
                 LeftContainer_UIListLayout.Parent = LeftSideFrame_Container
+
+                -- Auto-adjust CanvasSize based on content
+                LeftContainer_UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    LeftSideFrame_Container.CanvasSize = UDim2.new(0, 0, 0, LeftContainer_UIListLayout.AbsoluteContentSize.Y)
+                end)
 
                 local MiddleSpliterFrame = Instance.new("Frame")
                 MiddleSpliterFrame.Name = "MiddleSpliterFrame"
@@ -650,6 +658,7 @@ function library.new(name)
                 MiddleSpliterFrame_UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 MiddleSpliterFrame_UIStroke.Color = FrameInlineBorderColor
                 MiddleSpliterFrame_UIStroke.LineJoinMode = Enum.LineJoinMode.Miter
+                MiddleSpliterFrame_UIStroke.Thickness = 1
                 MiddleSpliterFrame_UIStroke.Transparency = 0
                 MiddleSpliterFrame_UIStroke.Enabled = true
                 MiddleSpliterFrame_UIStroke.Parent = MiddleSpliterFrame
@@ -662,11 +671,14 @@ function library.new(name)
                 RightSideFrame.Size = UDim2.new(0, 148, 0, 220)
                 RightSideFrame.Parent = SectionFrame
 
-                local RightSideFrame_Container = Instance.new("Frame")
+                local RightSideFrame_Container = Instance.new("ScrollingFrame") -- Changed to ScrollingFrame
                 RightSideFrame_Container.Name = "RightSideFrame_Container"
                 RightSideFrame_Container.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                 RightSideFrame_Container.BackgroundTransparency = 1
                 RightSideFrame_Container.Size = UDim2.new(0, 148, 0, 220)
+                RightSideFrame_Container.CanvasSize = UDim2.new(0, 0, 0, 0) -- Auto-adjusted by UIListLayout
+                RightSideFrame_Container.ScrollBarThickness = 4
+                RightSideFrame_Container.ScrollBarImageColor3 = FrameBorderColor
                 RightSideFrame_Container.Parent = RightSideFrame
 
                 local RightContainer_UIListLayout = Instance.new("UIListLayout")
@@ -674,6 +686,11 @@ function library.new(name)
                 RightContainer_UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
                 RightContainer_UIListLayout.Padding = UDim.new(0, 5)
                 RightContainer_UIListLayout.Parent = RightSideFrame_Container
+
+                -- Auto-adjust CanvasSize based on content
+                RightContainer_UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    RightSideFrame_Container.CanvasSize = UDim2.new(0, 0, 0, RightContainer_UIListLayout.AbsoluteContentSize.Y)
+                end)
 
                 local elements = {}
                 function elements.AddToggle(Name, Callback, Side)
@@ -703,7 +720,7 @@ function library.new(name)
                     ToggleButton.BorderColor3 = ElementBorderColor
                     ToggleButton.BorderSizePixel = 2
                     ToggleButton.Size = UDim2.new(0, 14, 0, 14)
-                    ToggleButton.Position = UDim2.new(0, 100, 0, 3) -- Moved further right (from 85 to 100)
+                    ToggleButton.Position = UDim2.new(0, 100, 0, 3)
                     ToggleButton.Font = TextFont
                     ToggleButton.Text = ""
                     ToggleButton.TextColor3 = TextColor
@@ -762,7 +779,7 @@ function library.new(name)
                     TextBox.BorderColor3 = ElementBorderColor
                     TextBox.BorderSizePixel = 2
                     TextBox.Size = UDim2.new(0, 45, 0, 14)
-                    TextBox.Position = UDim2.new(0, 100, 0, 3) -- Moved further right (from 85 to 100)
+                    TextBox.Position = UDim2.new(0, 100, 0, 3)
                     TextBox.Font = TextFont
                     TextBox.Text = tostring(Min)
                     TextBox.TextColor3 = TextColor
@@ -859,7 +876,7 @@ function library.new(name)
                     CycleButton.BorderColor3 = ElementBorderColor
                     CycleButton.BorderSizePixel = 2
                     CycleButton.Size = UDim2.new(0, 45, 0, 14)
-                    CycleButton.Position = UDim2.new(0, 100, 0, 3) -- Moved further right (from 85 to 100)
+                    CycleButton.Position = UDim2.new(0, 100, 0, 3)
                     CycleButton.Font = TextFont
                     CycleButton.Text = Options[1]
                     CycleButton.TextColor3 = TextColor
@@ -901,6 +918,17 @@ function library.new(name)
                     BlankLabel.TextColor3 = TextColor
                     BlankLabel.TextSize = 11
                     BlankLabel.Parent = (string.lower(Side) == "left" and LeftSideFrame_Container) or RightSideFrame_Container
+                    return {}
+                end
+
+                function elements.AddSeparator(Side) -- New function for line separators
+                    local Separator = Instance.new("Frame")
+                    Separator.Name = "Separator"
+                    Separator.BackgroundColor3 = FrameBorderColor
+                    Separator.BorderSizePixel = 0
+                    Separator.Size = UDim2.new(0, 140, 0, 2) -- 140 pixels wide, 2 pixels tall
+                    Separator.Position = UDim2.new(0, 4, 0, 0) -- Centered horizontally in the 148-pixel container
+                    Separator.Parent = (string.lower(Side) == "left" and LeftSideFrame_Container) or RightSideFrame_Container
                     return {}
                 end
 
