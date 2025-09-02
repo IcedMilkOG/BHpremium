@@ -145,7 +145,7 @@ function library.new(name)
         KeyLabel.Position = UDim2.new(0.1, 0, 0.2, 0)
         KeyLabel.Size = UDim2.new(0, 200, 0, 36)
         KeyLabel.Font = TextFont
-        KeyLabel.Text = "\t\t  Keltec\n\n\n"
+        KeyLabel.Text = "\t  Keltec\n\n\n"
         KeyLabel.TextColor3 = TextColor
         KeyLabel.TextSize = 25
         KeyLabel.RichText = true
