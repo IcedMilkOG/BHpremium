@@ -163,8 +163,8 @@ function library.new(name)
         TextBox.Text = ""
         TextBox.TextColor3 = TextColor
         TextBox.TextSize = 14
-        TextBox.Active = true -- Ensure interactable
-        TextBox.ZIndex = 2 -- Ensure above other elements
+        TextBox.Active = true
+        TextBox.ZIndex = 2
         TextBox.Parent = MainFrame
 
         local TextBox_UIStroke = Instance.new("UIStroke")
@@ -188,8 +188,8 @@ function library.new(name)
         GetKeyButton.Text = "Get Key"
         GetKeyButton.TextColor3 = TextColor
         GetKeyButton.TextSize = 14
-        GetKeyButton.Active = true -- Ensure interactable
-        GetKeyButton.ZIndex = 2 -- Ensure above other elements
+        GetKeyButton.Active = true
+        GetKeyButton.ZIndex = 2
         GetKeyButton.Parent = MainFrame
 
         local GetKeyButton_UIStroke = Instance.new("UIStroke")
@@ -213,8 +213,8 @@ function library.new(name)
         CheckKeyButton.Text = "Check Key"
         CheckKeyButton.TextColor3 = TextColor
         CheckKeyButton.TextSize = 14
-        CheckKeyButton.Active = true -- Ensure interactable
-        CheckKeyButton.ZIndex = 2 -- Ensure above other elements
+        CheckKeyButton.Active = true
+        CheckKeyButton.ZIndex = 2
         CheckKeyButton.Parent = MainFrame
 
         local CheckKeyButton_UIStroke = Instance.new("UIStroke")
@@ -255,8 +255,8 @@ function library.new(name)
         MenuToggleButton.TextSize = 11
         MenuToggleButton.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         MenuToggleButton.TextStrokeTransparency = 0.7
-        MenuToggleButton.Active = true -- Ensure interactable
-        MenuToggleButton.ZIndex = 2 -- Ensure above other elements
+        MenuToggleButton.Active = true
+        MenuToggleButton.ZIndex = 2
         MenuToggleButton.Parent = ScreenGui
 
         local MenuToggleButton_UIStroke = Instance.new("UIStroke")
@@ -510,7 +510,7 @@ function library.new(name)
             ToolTip.TextSize = 12
             ToolTip.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
             ToolTip.Visible = false
-            ToolTip.ZIndex = 3 -- Ensure above other elements
+            ToolTip.ZIndex = 3
             ToolTip.Parent = ScreenGui
 
             local ToolTip_UIStroke = Instance.new("UIStroke")
@@ -554,8 +554,8 @@ function library.new(name)
             TabButton.TextColor3 = TextColor
             TabButton.TextSize = 10
             TabButton.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
-            TabButton.Active = true -- Ensure interactable
-            TabButton.ZIndex = 2 -- Ensure above other elements
+            TabButton.Active = true
+            TabButton.ZIndex = 2
             TabButton.Parent = TabsFrame
 
             local TabButton_UIStroke = Instance.new("UIStroke")
@@ -643,8 +643,8 @@ function library.new(name)
                 LeftSideFrame_Container.CanvasSize = UDim2.new(0, 0, 0, 0)
                 LeftSideFrame_Container.ScrollBarThickness = 4
                 LeftSideFrame_Container.ScrollBarImageColor3 = FrameBorderColor
-                LeftSideFrame_Container.Active = true -- Ensure input passes to children
-                LeftSideFrame_Container.ZIndex = 1 -- Base ZIndex
+                LeftSideFrame_Container.Active = true
+                LeftSideFrame_Container.ZIndex = 1
                 LeftSideFrame_Container.Parent = LeftSideFrame
 
                 local LeftContainer_UIListLayout = Instance.new("UIListLayout")
@@ -691,8 +691,8 @@ function library.new(name)
                 RightSideFrame_Container.CanvasSize = UDim2.new(0, 0, 0, 0)
                 RightSideFrame_Container.ScrollBarThickness = 4
                 RightSideFrame_Container.ScrollBarImageColor3 = FrameBorderColor
-                RightSideFrame_Container.Active = true -- Ensure input passes to children
-                RightSideFrame_Container.ZIndex = 1 -- Base ZIndex
+                RightSideFrame_Container.Active = true
+                RightSideFrame_Container.ZIndex = 1
                 RightSideFrame_Container.Parent = RightSideFrame
 
                 local RightContainer_UIListLayout = Instance.new("UIListLayout")
@@ -711,7 +711,7 @@ function library.new(name)
                     ElementContainer.Name = "ToggleContainer_" .. Name
                     ElementContainer.BackgroundTransparency = 1
                     ElementContainer.Size = UDim2.new(0, 148, 0, 20)
-                    ElementContainer.ZIndex = 2 -- Ensure above ScrollingFrame
+                    ElementContainer.ZIndex = 2
                     ElementContainer.Parent = (string.lower(Side) == "left" and LeftSideFrame_Container) or RightSideFrame_Container
 
                     local ToggleLabel = Instance.new("TextLabel")
@@ -725,7 +725,7 @@ function library.new(name)
                     ToggleLabel.TextColor3 = TextColor
                     ToggleLabel.TextSize = 11
                     ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    ToggleLabel.ZIndex = 2 -- Ensure above ScrollingFrame
+                    ToggleLabel.ZIndex = 2
                     ToggleLabel.Parent = ElementContainer
                     patches.FixTextSize(ToggleLabel, 8)
 
@@ -740,8 +740,8 @@ function library.new(name)
                     ToggleButton.Text = ""
                     ToggleButton.TextColor3 = TextColor
                     ToggleButton.TextSize = 8
-                    ToggleButton.Active = true -- Ensure interactable
-                    ToggleButton.ZIndex = 3 -- Ensure above other elements
+                    ToggleButton.Active = true
+                    ToggleButton.ZIndex = 3
                     ToggleButton.Parent = ElementContainer
 
                     local ToggleButton_UIStroke = Instance.new("UIStroke")
@@ -758,7 +758,7 @@ function library.new(name)
                     local function OnToggleButtonClick()
                         print("Toggle clicked: " .. Name .. ", New state: " .. tostring(not Toggled)) -- Debug print
                         Toggled = not Toggled
-                        patches.FadeObject(ToggleButton, 0.5, Toggled and ToggleButton.BorderColor3 or Color3.fromRGB(20, 20, 20), false)
+                        patches.FadeObject(ToggleButton, 0.5, Toggled and 0 or 0.5, false) -- Fixed: Use transparency values (0 for on, 0.5 for off)
                         ToggleButton_UIStroke.Enabled = not Toggled
                         if Callback then
                             pcall(Callback, Toggled) -- Safely call the callback
@@ -779,7 +779,7 @@ function library.new(name)
                     ElementContainer.Name = "TextBoxContainer_" .. Name
                     ElementContainer.BackgroundTransparency = 1
                     ElementContainer.Size = UDim2.new(0, 148, 0, 20)
-                    ElementContainer.ZIndex = 2 -- Ensure above ScrollingFrame
+                    ElementContainer.ZIndex = 2
                     ElementContainer.Parent = (string.lower(Side) == "left" and LeftSideFrame_Container) or RightSideFrame_Container
 
                     local TextBoxLabel = Instance.new("TextLabel")
@@ -793,7 +793,7 @@ function library.new(name)
                     TextBoxLabel.TextColor3 = TextColor
                     TextBoxLabel.TextSize = 11
                     TextBoxLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    TextBoxLabel.ZIndex = 2 -- Ensure above ScrollingFrame
+                    TextBoxLabel.ZIndex = 2
                     TextBoxLabel.Parent = ElementContainer
                     patches.FixTextSize(TextBoxLabel, 8)
 
@@ -807,8 +807,8 @@ function library.new(name)
                     TextBox.Text = tostring(Min)
                     TextBox.TextColor3 = TextColor
                     TextBox.TextSize = 10
-                    TextBox.Active = true -- Ensure interactable
-                    TextBox.ZIndex = 3 -- Ensure above other elements
+                    TextBox.Active = true
+                    TextBox.ZIndex = 3
                     TextBox.Parent = ElementContainer
 
                     local TextBox_UIStroke = Instance.new("UIStroke")
@@ -861,7 +861,7 @@ function library.new(name)
                     ParagraphLabel.TextWrapped = true
                     ParagraphLabel.TextXAlignment = Enum.TextXAlignment.Left
                     ParagraphLabel.TextYAlignment = Enum.TextYAlignment.Top
-                    ParagraphLabel.ZIndex = 2 -- Ensure above ScrollingFrame
+                    ParagraphLabel.ZIndex = 2
                     ParagraphLabel.Parent = SectionFrame
 
                     local ParagraphLabel_UIStroke = Instance.new("UIStroke")
@@ -881,7 +881,7 @@ function library.new(name)
                     ElementContainer.Name = "CycleButtonContainer_" .. Name
                     ElementContainer.BackgroundTransparency = 1
                     ElementContainer.Size = UDim2.new(0, 148, 0, 20)
-                    ElementContainer.ZIndex = 2 -- Ensure above ScrollingFrame
+                    ElementContainer.ZIndex = 2
                     ElementContainer.Parent = (string.lower(Side) == "left" and LeftSideFrame_Container) or RightSideFrame_Container
 
                     local CycleButtonLabel = Instance.new("TextLabel")
@@ -895,7 +895,7 @@ function library.new(name)
                     CycleButtonLabel.TextColor3 = TextColor
                     CycleButtonLabel.TextSize = 11
                     CycleButtonLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    CycleButtonLabel.ZIndex = 2 -- Ensure above ScrollingFrame
+                    CycleButtonLabel.ZIndex = 2
                     CycleButtonLabel.Parent = ElementContainer
                     patches.FixTextSize(CycleButtonLabel, 8)
 
@@ -910,8 +910,8 @@ function library.new(name)
                     CycleButton.Text = Options[1]
                     CycleButton.TextColor3 = TextColor
                     CycleButton.TextSize = 9
-                    CycleButton.Active = true -- Ensure interactable
-                    CycleButton.ZIndex = 3 -- Ensure above other elements
+                    CycleButton.Active = true
+                    CycleButton.ZIndex = 3
                     CycleButton.Parent = ElementContainer
 
                     local CycleButton_UIStroke = Instance.new("UIStroke")
@@ -926,12 +926,12 @@ function library.new(name)
 
                     local currentIndex = 1
                     local function OnCycleButtonClick()
-                        print("CycleButton clicked: " .. Name .. ", New option: " .. Options[currentIndex % #Options + 1]) -- Debug print
+                        print("CycleButton clicked: " .. Name .. ", New option: " .. Options[currentIndex % #Options + 1])
                         currentIndex = currentIndex % #Options + 1
                         CycleButton.Text = Options[currentIndex]
                         if Callback then
-                            pcall(Callback, Options[currentIndex]) -- Safely call the callback
-                            print("Callback executed for " .. Name .. ": " .. Options[currentIndex]) -- Debug print
+                            pcall(Callback, Options[currentIndex])
+                            print("Callback executed for " .. Name .. ": " .. Options[currentIndex])
                         end
                     end
                     CycleButton.MouseButton1Click:Connect(OnCycleButtonClick)
@@ -952,7 +952,7 @@ function library.new(name)
                     BlankLabel.Text = ""
                     BlankLabel.TextColor3 = TextColor
                     BlankLabel.TextSize = 11
-                    BlankLabel.ZIndex = 2 -- Ensure above ScrollingFrame
+                    BlankLabel.ZIndex = 2
                     BlankLabel.Parent = (string.lower(Side) == "left" and LeftSideFrame_Container) or RightSideFrame_Container
                     return {}
                 end
@@ -964,7 +964,7 @@ function library.new(name)
                     Separator.BorderSizePixel = 0
                     Separator.Size = UDim2.new(0, 140, 0, 2)
                     Separator.Position = UDim2.new(0, 4, 0, 0)
-                    Separator.ZIndex = 2 -- Ensure above ScrollingFrame
+                    Separator.ZIndex = 2
                     Separator.Parent = (string.lower(Side) == "left" and LeftSideFrame_Container) or RightSideFrame_Container
                     return {}
                 end
