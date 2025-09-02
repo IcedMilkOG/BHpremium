@@ -142,12 +142,13 @@ function library.new(name)
         KeyLabel.Name = "KeyLabel"
         KeyLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         KeyLabel.BackgroundTransparency = 1
-        KeyLabel.Position = UDim2.new(0.1, 0, 0.2, 0)
+        KeyLabel.Position = UDim2.new(0.5, -100, 0.2, 0) -- Centered horizontally
         KeyLabel.Size = UDim2.new(0, 200, 0, 36)
         KeyLabel.Font = TextFont
-        KeyLabel.Text = "\t Keltec\n\n\n"
+        KeyLabel.Text = "Keltec" -- Removed \t and extra newlines
         KeyLabel.TextColor3 = TextColor
         KeyLabel.TextSize = 25
+        KeyLabel.TextXAlignment = Enum.TextXAlignment.Center -- Center the text
         KeyLabel.RichText = true
         KeyLabel.Parent = MainFrame
         patches.FixTextSize(KeyLabel, 20)
@@ -649,7 +650,6 @@ function library.new(name)
                 MiddleSpliterFrame_UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 MiddleSpliterFrame_UIStroke.Color = FrameInlineBorderColor
                 MiddleSpliterFrame_UIStroke.LineJoinMode = Enum.LineJoinMode.Miter
-                MiddleSpliterFrame_UIStroke.Thickness = 1
                 MiddleSpliterFrame_UIStroke.Transparency = 0
                 MiddleSpliterFrame_UIStroke.Enabled = true
                 MiddleSpliterFrame_UIStroke.Parent = MiddleSpliterFrame
@@ -703,7 +703,7 @@ function library.new(name)
                     ToggleButton.BorderColor3 = ElementBorderColor
                     ToggleButton.BorderSizePixel = 2
                     ToggleButton.Size = UDim2.new(0, 14, 0, 14)
-                    ToggleButton.Position = UDim2.new(0, 85, 0, 3)
+                    ToggleButton.Position = UDim2.new(0, 100, 0, 3) -- Moved further right (from 85 to 100)
                     ToggleButton.Font = TextFont
                     ToggleButton.Text = ""
                     ToggleButton.TextColor3 = TextColor
@@ -762,7 +762,7 @@ function library.new(name)
                     TextBox.BorderColor3 = ElementBorderColor
                     TextBox.BorderSizePixel = 2
                     TextBox.Size = UDim2.new(0, 45, 0, 14)
-                    TextBox.Position = UDim2.new(0, 85, 0, 3)
+                    TextBox.Position = UDim2.new(0, 100, 0, 3) -- Moved further right (from 85 to 100)
                     TextBox.Font = TextFont
                     TextBox.Text = tostring(Min)
                     TextBox.TextColor3 = TextColor
@@ -859,7 +859,7 @@ function library.new(name)
                     CycleButton.BorderColor3 = ElementBorderColor
                     CycleButton.BorderSizePixel = 2
                     CycleButton.Size = UDim2.new(0, 45, 0, 14)
-                    CycleButton.Position = UDim2.new(0, 85, 0, 3)
+                    CycleButton.Position = UDim2.new(0, 100, 0, 3) -- Moved further right (from 85 to 100)
                     CycleButton.Font = TextFont
                     CycleButton.Text = Options[1]
                     CycleButton.TextColor3 = TextColor
