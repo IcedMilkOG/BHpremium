@@ -146,7 +146,7 @@ function library.new(name)
         KeyLabel.Position = UDim2.new(0.5, -100, 0.2, 0)
         KeyLabel.Size = UDim2.new(0, 200, 0, 36)
         KeyLabel.Font = TextFont
-        KeyLabel.Text = "Keltec ROST\n\n"
+        KeyLabel.Text = "  Keltec ROST\n\n"
         KeyLabel.TextColor3 = TextColor
         KeyLabel.TextSize = 25
         KeyLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -379,7 +379,7 @@ function library.new(name)
         KelLabel.Size = UDim2.new(0, 20, 0, 20)
         KelLabel.Font = TextFont
         KelLabel.LineHeight = 0.74
-        KelLabel.Text = "ROST"
+        KelLabel.Text = "ros"
         KelLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
         KelLabel.TextSize = 12
         KelLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
